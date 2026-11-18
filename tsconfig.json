@@ -1,0 +1,15 @@
+{
+	"extends": "$app/tsconfig",
+	"compilerOptions": {
+		"allowJs": true,
+		"checkJs": false,
+		"strict": true,
+		"moduleResolution": "bundler",
+		"module": "esnext",
+		"target": "es2022",
+		"skipLibCheck": true,
+		"isolatedModules": true
+	},
+	"include": ["src", "test", "*"],
+	"exclude": ["src/service-worker"]
+}

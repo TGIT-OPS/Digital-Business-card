@@ -8,15 +8,16 @@ export async function saveCard(supabase: SupabaseClient, id: string, form: FormD
 	const company_id = clean(form.get('company_id'));
 	if (!name) return { message: 'Name is required.' };
 	if (!company_id) return { message: 'Choose a company.' };
-	const slug = slugify(clean(form.get('slug')) || name);
-	const { data: clash } = await supabase.from('cards').select('id').eq('slug', slug).neq('id', id).maybeSingle();
-	if (clash) return { message: 'That public link is already used. Choose another slug.' };
-
 	const { data: existing } = await supabase
 		.from('cards')
-		.select('photo_path, video_path, video_poster_path, header_path, header_poster_path')
+		.select('photo_path, video_path, video_poster_path, header_path, header_poster_path, slug, slug_locked')
 		.eq('id', id)
 		.maybeSingle();
+
+	let slug = slugify(clean(form.get('slug')) || name);
+	if (!isNew && existing?.slug_locked && existing.slug) slug = existing.slug;
+	const { data: clash } = await supabase.from('cards').select('id').eq('slug', slug).neq('id', id).maybeSingle();
+	if (clash) return { message: 'That public link is already used. Choose another slug.' };
 
 	let photo_path = existing?.photo_path ?? null;
 	let video_path = existing?.video_path ?? null;
@@ -90,13 +91,35 @@ export async function saveCard(supabase: SupabaseClient, id: string, form: FormD
 		}
 
 		const useCompany = form.get('use_company_colors') === 'on';
+		const qrRaw = clean(form.get('qr_template'));
+		const qr_template = qrRaw === 'black' || qrRaw === 'red' || qrRaw === 'logo' ? qrRaw : 'logo';
+		const labels = clean(form.get('labels'))
+			.split(',')
+			.map((item) => item.trim())
+			.filter(Boolean)
+			.slice(0, 12);
+		let template_id: string | null = null;
+		let department = emptyToNull(form.get('department'));
+		if (isNew) {
+			const { data: template } = await supabase
+				.from('card_templates')
+				.select('id, defaults')
+				.eq('company_id', company_id)
+				.eq('is_default', true)
+				.maybeSingle();
+			if (template) {
+				template_id = template.id;
+				const defaults = (template.defaults ?? {}) as { department?: string; qr_template?: string };
+				if (!department && defaults.department) department = defaults.department;
+			}
+		}
 		const row = {
 			id,
 			company_id,
 			slug,
 			name,
 			title: emptyToNull(form.get('title')),
-			department: emptyToNull(form.get('department')),
+			department,
 			phone: emptyToNull(form.get('phone')),
 			whatsapp: emptyToNull(form.get('whatsapp')),
 			email: emptyToNull(form.get('email')),
@@ -117,7 +140,13 @@ export async function saveCard(supabase: SupabaseClient, id: string, form: FormD
 			video_autoplay: form.get('video_autoplay') === 'on' && video_mode !== 'none',
 			header_mode: header_path ? 'video' : 'none',
 			header_path,
-			header_poster_path
+			header_poster_path,
+			labels,
+			qr_template,
+			slug_locked: true,
+			track_location: form.get('track_location') === 'on',
+			two_way_share: form.get('two_way_share') === 'on',
+			...(isNew ? { template_id } : {})
 		};
 		const query = isNew ? supabase.from('cards').insert(row) : supabase.from('cards').update(row).eq('id', id);
 		const { error } = await query;

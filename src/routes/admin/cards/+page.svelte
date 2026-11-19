@@ -26,7 +26,7 @@
 <div class="card" style="padding:0">
 	<table class="data">
 		<thead>
-			<tr><th>Name</th><th>Title</th><th>Company</th><th>Status</th><th>Views</th><th>Saves</th><th></th></tr>
+			<tr><th>Name</th><th>Title</th><th>Company</th><th>Labels</th><th>Status</th><th>Views</th><th>Saves</th><th></th></tr>
 		</thead>
 		<tbody>
 			{#each data.cards as card}
@@ -34,16 +34,18 @@
 					<td>{card.name}</td>
 					<td>{card.title}</td>
 					<td>{card.companyName}</td>
+					<td>{(card.labels ?? []).join(', ')}</td>
 					<td><span class="badge" class:badge-muted={!card.active}>{card.active ? 'Ready' : 'Draft'}</span></td>
 					<td>{card.views}</td>
 					<td>{card.saves}</td>
 					<td style="display:flex;gap:8px">
 						<a class="btn btn-outline btn-sm" href="/admin/cards/{card.id}">Edit</a>
 						<a class="btn btn-outline btn-sm" href="/c/{card.slug}" target="_blank" rel="noopener">View public</a>
+						<form method="POST" action="/admin/cards/{card.id}?/duplicate"><button class="btn btn-outline btn-sm" type="submit">Duplicate</button></form>
 					</td>
 				</tr>
 			{:else}
-				<tr><td colspan="7">No cards match.</td></tr>
+				<tr><td colspan="8">No cards match.</td></tr>
 			{/each}
 		</tbody>
 	</table>

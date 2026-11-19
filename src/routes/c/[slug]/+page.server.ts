@@ -20,15 +20,21 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 	const admin = (user?.email ?? '').toLowerCase() === superAdminEmail();
 	const visible = Boolean(data.active && company.active);
 	if (!visible && !admin) error(404, 'This card is not available.');
+	const { data: settings } = await supabase.from('org_settings').select('two_way_share').eq('id', 1).maybeSingle();
+	const share = data.two_way_share ?? settings?.two_way_share ?? true;
 	return {
-		view: buildCardView({
-			company,
-			card: data,
-			products: products ?? [],
-			baseUrl: PUBLIC_BASE_URL,
-			supabaseUrl: PUBLIC_SUPABASE_URL
-		}),
+		view: {
+			...buildCardView({
+				company,
+				card: data,
+				products: products ?? [],
+				baseUrl: PUBLIC_BASE_URL,
+				supabaseUrl: PUBLIC_SUPABASE_URL
+			}),
+			companyEmail: ''
+		},
 		draft: !visible,
-		trackViews: visible
+		trackViews: visible,
+		showExchange: Boolean(share)
 	};
 };

@@ -55,6 +55,7 @@ export type CompanySource = {
 	theme_path?: string | null;
 	theme_poster_path?: string | null;
 	tagline?: string | null;
+	uen?: string | null;
 };
 
 export type CardSource = {
@@ -82,6 +83,7 @@ export type CardSource = {
 	header_mode?: string | null;
 	header_path?: string | null;
 	header_poster_path?: string | null;
+	qr_template?: string | null;
 };
 
 export type ProductSource = {
@@ -134,6 +136,8 @@ export type CardView = {
 	theme: ThemeView | null;
 	tagline: string;
 	companyEmail: string;
+	uen: string;
+	qrTemplate: string;
 	slug: string;
 };
 
@@ -219,7 +223,7 @@ export function buildCardView(options: {
 }): CardView {
 	const { company, card, products, baseUrl, supabaseUrl } = options;
 	const phone = card.phone || company.phone || '';
-	const email = card.email || company.email || '';
+	const email = card.email || '';
 	const website = safeHttpUrl(card.website || company.website);
 	const address = formatAddress(company);
 	const addressLines = [company.address_line, [company.city, company.postal_code].filter(Boolean).join(' ')].filter(
@@ -303,6 +307,8 @@ export function buildCardView(options: {
 		theme: options.theme === undefined ? theme : options.theme,
 		tagline: company.tagline || '',
 		companyEmail: company.email || '',
+		uen: company.uen || '',
+		qrTemplate: card.qr_template || 'logo',
 		slug: card.slug
 	};
 }

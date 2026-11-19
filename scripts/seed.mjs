@@ -59,7 +59,7 @@ const company = {
 	country: 'Singapore',
 	about: 'Trusted provider of enterprise IT solutions since 2016, delivering cutting-edge hardware, software, and managed services across South Asia.',
 	mission: 'At TGIT Pte Ltd, our mission is to deliver innovative IT solutions that empower businesses. We strive to enhance operational efficiency and drive growth through technology.',
-	tagline: 'Clear ownership. Connected teams.',
+	tagline: 'Transforming IT into reality',
 	layout_template: 'classic',
 	active: true,
 	color_primary: '#FF0000',
@@ -144,7 +144,10 @@ const cardFields = {
 	slug: 'manoharan',
 	name: 'Manoharan Pethappan',
 	title: 'IT Manager',
+	department: 'Information Technology',
 	phone: '+65 8015 1060',
+	qr_template: 'logo',
+	slug_locked: true,
 	whatsapp: 'https://wa.me/6580151060',
 	email: 'manoharan@tgitsolutions.com',
 	website: 'https://tgitsolutions.com',
@@ -159,6 +162,36 @@ if (!card) {
 	const { error } = await supabase.from('cards').update(cardFields).eq('id', card.id);
 	if (error) console.error(error.message);
 	else console.log('Updated Manoharan Pethappan’s card.');
+}
+
+const { data: template } = await supabase
+	.from('card_templates')
+	.select('id')
+	.eq('company_id', companyId)
+	.eq('name', 'TGIT Classic v8')
+	.maybeSingle();
+let templateId = template?.id;
+if (!templateId) {
+	const created = await supabase
+		.from('card_templates')
+		.insert({
+			company_id: companyId,
+			name: 'TGIT Classic v8',
+			layout: 'classic',
+			locked_fields: ['layout', 'palette'],
+			defaults: { qr_template: 'logo', tagline: 'Transforming IT into reality', department: 'Information Technology' },
+			is_default: true
+		})
+		.select('id')
+		.single();
+	if (created.error) console.error(created.error.message);
+	templateId = created.data?.id;
+}
+if (templateId) {
+	await supabase.from('card_templates').update({ is_default: false }).eq('company_id', companyId).neq('id', templateId);
+	await supabase.from('card_templates').update({ is_default: true }).eq('id', templateId);
+	await supabase.from('cards').update({ template_id: templateId }).eq('slug', 'manoharan');
+	console.log('TGIT Classic v8 is the default template.');
 }
 
 console.log('Seed finished.');

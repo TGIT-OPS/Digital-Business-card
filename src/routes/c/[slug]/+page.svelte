@@ -1,5 +1,5 @@
 <script lang="ts">
-	import PublicCard from '#lib/components/PublicCard.svelte';
+	import V8Card from '#lib/components/V8Card.svelte';
 	let { data } = $props();
 </script>
 
@@ -14,5 +14,5 @@
 
 <div class="public-page">
 	{#if data.draft}<p class="draft-banner">This card is not public yet.</p>{/if}
-	<PublicCard model={data.view} interactive={true} trackViews={data.trackViews} />
+	<V8Card model={data.view} interactive={true} trackViews={data.trackViews} showExchange={data.showExchange} />
 </div>

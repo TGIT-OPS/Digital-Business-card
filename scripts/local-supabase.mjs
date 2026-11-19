@@ -40,6 +40,8 @@ await psqlFile(path.join(ROOT, 'supabase/local/roles.sql'));
 await runAuth(['migrate']);
 await psql(`grant execute on all functions in schema auth to anon, authenticated, service_role, authenticator;`);
 await psqlFile(path.join(ROOT, 'supabase/migrations/20261118120000_init.sql'));
+await psqlFile(path.join(ROOT, 'supabase/migrations/20261119120000_leads_templates.sql'));
+await psql(`NOTIFY pgrst, 'reload schema';`);
 
 const dbAuth = 'postgres://postgres:postgres@127.0.0.1:5432/postgres?sslmode=disable';
 const dbRest = 'postgres://authenticator:postgres@127.0.0.1:5432/postgres?sslmode=disable';
@@ -180,6 +182,62 @@ function storage(req, res, url) {
 	const objectPrefix = '/storage/v1/object/media/';
 	if ((req.method === 'GET' || req.method === 'HEAD') && url.pathname.startsWith(publicPrefix)) {
 		return sendFile(req, res, safePath(decodeURIComponent(url.pathname.slice(publicPrefix.length))));
+	}
+	if (req.method === 'POST' && url.pathname === '/storage/v1/object/list/media') {
+		const payload = verifyBearer(req);
+		if (!payload || !['service_role', 'authenticated'].includes(payload.role)) return deny(res);
+		const chunks = [];
+		req.on('data', (chunk) => chunks.push(chunk));
+		req.on('end', () => {
+			let body = {};
+			try {
+				body = JSON.parse(Buffer.concat(chunks).toString() || '{}');
+			} catch {
+				body = {};
+			}
+			const prefix = safePath(String(body.prefix || ''));
+			const dir = prefix ? path.join(STORAGE, prefix) : STORAGE;
+			if (!dir.startsWith(STORAGE) || !fs.existsSync(dir)) {
+				res.writeHead(200, { 'content-type': 'application/json' });
+				res.end('[]');
+				return;
+			}
+			const entries = fs.readdirSync(dir, { withFileTypes: true }).map((entry) => {
+				const file = path.join(dir, entry.name);
+				return {
+					name: entry.name,
+					id: entry.isDirectory() ? null : entry.name,
+					metadata: entry.isFile() ? { size: fs.statSync(file).size } : null
+				};
+			});
+			res.writeHead(200, { 'content-type': 'application/json' });
+			res.end(JSON.stringify(entries));
+		});
+		return;
+	}
+	if (req.method === 'DELETE' && url.pathname === '/storage/v1/object/media') {
+		const payload = verifyBearer(req);
+		if (!payload || !['service_role', 'authenticated'].includes(payload.role)) return deny(res);
+		const chunks = [];
+		req.on('data', (chunk) => chunks.push(chunk));
+		req.on('end', () => {
+			let body = {};
+			try {
+				body = JSON.parse(Buffer.concat(chunks).toString() || '{}');
+			} catch {
+				body = {};
+			}
+			const prefixes = Array.isArray(body.prefixes) ? body.prefixes : [];
+			for (const item of prefixes) {
+				const rel = safePath(typeof item === 'string' ? item : item?.name || '');
+				if (!rel) continue;
+				const file = path.join(STORAGE, rel);
+				if (file.startsWith(STORAGE) && fs.existsSync(file) && fs.statSync(file).isFile()) fs.unlinkSync(file);
+			}
+			res.writeHead(200, { 'content-type': 'application/json' });
+			res.end('[]');
+		});
+		return;
 	}
 	if ((req.method === 'POST' || req.method === 'PUT') && url.pathname.startsWith(objectPrefix)) {
 		const payload = verifyBearer(req);

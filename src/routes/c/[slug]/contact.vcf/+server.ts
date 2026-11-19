@@ -19,7 +19,7 @@ export const GET: RequestHandler = async ({ params }) => {
 		company: company?.name,
 		phone: data.phone || company?.phone,
 		whatsapp: data.whatsapp || company?.whatsapp,
-		email: data.email || company?.email,
+		email: data.email,
 		website: safeHttpUrl(data.website || company?.website),
 		street: company?.address_line,
 		city: company?.city,

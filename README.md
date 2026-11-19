@@ -27,9 +27,9 @@ Do not use Vercel. Its free plan does not allow commercial use.
 1. Open **SQL Editor → New query**.
 2. Paste the whole file `supabase/migrations/20261118120000_init.sql`.
 3. Click **Run**. You should see “Success”.
-4. Run it again if you are unsure. It is safe to repeat.
+4. Paste `supabase/migrations/20261119120000_leads_templates.sql` and run that too. It adds leads, templates and the v8 card fields. Both files are safe to run again.
 
-This creates companies, cards, products and view counts. Visitors can only read cards that are enabled, and only when that company is active. Only the super admin can change anything. The anon key cannot edit cards.
+This creates companies, cards, products, templates, leads and view counts. Visitors can only read cards that are enabled, and only when that company is active. Only the super admin can change anything. The anon key cannot insert leads; the site does that through `/api/leads`.
 
 Logos, photos and short videos go in a public Storage bucket named `media`. The migration creates that bucket.
 
@@ -67,9 +67,10 @@ npm run seed
 That creates:
 
 - The super admin login (email and password from `.env`).
-- Company **TGIT Pte Ltd**, 101 Eunos Ave 3, Singapore 409835, +65 80151060, https://tgitsolutions.com.
-- Six real services, and the tagline “Clear ownership. Connected teams.”
-- The card for **Manoharan Pethappan**, IT Manager, slug `manoharan`, email manoharan@tgitsolutions.com, phone +65 8015 1060.
+- Company **TGIT Pte Ltd**, #08-01, 101 Eunos Avenue 3, Singapore 409538, +65 80151060, https://tgitsolutions.com. The postcode 409538 matches the source PDF and is still pending confirmation.
+- Six real services, and the tagline “Transforming IT into reality”.
+- The card for **Manoharan Pethappan**, IT Manager, Information Technology, slug `manoharan`, email manoharan@tgitsolutions.com, phone +65 8015 1060.
+- The company mailbox `support@tgitsolutions.com` stays on the company record and is not printed on the card.
 - The TGIT logo and the looping header video in Storage.
 
 You can delete `SUPER_ADMIN_PASSWORD` from `.env` after this. The running site does not need the password. To change the password later, use Supabase → Authentication → Users.
@@ -82,7 +83,7 @@ If you would rather create the user by hand: Authentication → Users → Add us
 npm run dev
 ```
 
-Open http://localhost:5173 and sign in. You should see the dashboard, the company, and Manoharan’s card. The public page is http://localhost:5173/c/manoharan.
+Open http://localhost:5173 and sign in. You should see Overview, the company, and Manoharan’s card. The public page is http://localhost:5173/c/manoharan.
 
 QR codes and copied links use `PUBLIC_BASE_URL`. For a local trial, set that to `http://localhost:5173` and restart. Put `https://cards.tgitsolutions.com` back before you deploy.
 
@@ -127,19 +128,25 @@ Leave the website at `tgitsolutions.com` where it is. Only the `cards` name move
 
 ## Using the admin
 
-Sign in at `/login`. The sidebar has Dashboard, Cards and Companies.
+Sign in at `/login`. The sidebar has Overview, Contacts, Analytics, Assets, Templates, Cards, Companies, Settings and Help.
 
-- **Dashboard** shows how many cards and companies you have, how many times cards were opened, and how many people saved the contact.
-- **Companies** stores the address, phone, email, website, about text, mission, logo, colours, one of three layouts (Classic Vertical, Red Bold, Minimal), products, social links, and optional video.
-- **Cards** is the list. Search by name and filter by company or by Ready / Draft. Open a card to edit the person, watch the phone preview, copy the link, download the QR (PNG and SVG) and download the print PDF.
+- **Overview** shows how many cards and companies you have, views, saved contacts and leads.
+- **Contact Manager** lists people who used Exchange Contacts. Search, edit the note, delete, or download a CSV.
+- **Analytics** shows views, saves and clicks per day, plus country and city when location tracking is on. Download a CSV from the same page.
+- **Asset Library** lists files in the media bucket. Upload, copy the public URL, or delete. Videos are capped at 8 MB.
+- **Templates** holds TGIT Classic v8 as the company default. New cards start from that default.
+- **Companies** stores the address, phone, email, website, about text, mission, logo, colours, products, social links, and optional video. An optional UEN is shown on the card only when it is filled in. Leave it empty for TGIT.
+- **Cards** is the list. Search by name, filter by company or by Ready / Draft, and see labels. Duplicate copies a card. Open a card to use the wizard: **Build**, **Customize**, **Set-up**, with Back, Next and Save & Share, and a live phone preview. Customize offers TGIT palette presets only. The short URL can be edited until the first save, then it is locked.
+- **Settings** sets the organisation defaults for two-way contact sharing and IP location tracking.
+- **Help** is a short static guide.
 
 A card that is not enabled, or that belongs to an inactive company, is hidden from the public link.
 
 ### Colours
 
-Company colours drive the public card and the print PDF. On a single card you can turn off “Use company colours” and set a different palette. The phone preview updates as you change them. The print PDF ignores the per-card colours and keeps the company palette, so a printed batch for one company stays consistent.
+Company colours drive the public card and the print PDF. Customize on a card offers TGIT palette presets only: red, gold and pale yellow. The print PDF keeps the company palette.
 
-Red is used for large headings on white and for buttons. Gold and pale yellow are for shapes and soft fills, not for small text.
+Red is used for large headings on white, for buttons, and for the 12px tagline. Gold and pale yellow are for shapes, not for text. Icon circles use a pale red tint (`#FFE5E5`). Do not introduce blue.
 
 ### Video
 
@@ -154,25 +161,29 @@ Supabase’s free plan includes 1 GB of file storage. Keep clips short (about 20
 
 ### Print PDF
 
-**Print card PDF** downloads a two-page file, 55 mm wide and 90 mm tall. The front is the person and the logo. The back is the QR code and the company contact details. It is built in the browser, so it stays inside Cloudflare’s free plan.
+**Print card PDF** downloads a two-page file, 55 mm wide and 90 mm tall. It is built in the browser, so it stays inside Cloudflare’s free plan. The company support email is not printed on the card.
+
+### Public card
+
+The public page is the v8 card. The front plays for about 6 seconds, flips to the back for about 12 seconds, then flips back and repeats. Only the header video moves on the back; the QR, services and footer stay still. A tap flips it by hand. Visitors who prefer reduced motion see the poster and no automatic flip. A red **Exchange Contacts** button opens a short form (name, email and company are required).
 
 ### QR code
 
-Each card’s QR code opens `https://cards.tgitsolutions.com/c/<slug>` (or whatever `PUBLIC_BASE_URL` is). Download it as PNG or SVG from the card editor. The public page shows the same code under “Scan for our products & services”.
+Each card’s QR code opens `https://cards.tgitsolutions.com/c/<slug>` (or whatever `PUBLIC_BASE_URL` is). Templates are Black, Dark red and Logo in the centre. Every template uses error correction H. Download PNG, SVG or PDF from the card editor.
 
 ### Save contact
 
-**Save Contact** downloads a `.vcf` file. Phones import the name, title, company, phone, email, website and Singapore address.
+**Save Contact** downloads a `.vcf` file. Phones import the name, title, company, phone, email, website, address and the card link.
 
 ### Counts
 
-Opening a public card counts a view. Downloading the contact counts a save. Call, WhatsApp, Email, Website, Directions, Share and Video count as clicks. The numbers are on the dashboard and on each card. Draft cards are not counted.
+Opening a public card counts a view. Downloading the contact counts a save. An exchanged contact counts a lead. Country and city are stored only when Track IP location is on, using Cloudflare’s `cf-ipcountry` and `cf-ipcity` headers. The IP address is not stored. Draft cards are not counted.
 
 ## Layouts
 
 | Template | Look |
 | --- | --- |
-| Classic Vertical | Red header, gold band, pale yellow QR panel. This is the TGIT design. |
+| Classic Vertical | TGIT Classic v8. Looping header, red wave, gold line, flip to services. This is the TGIT design. |
 | Red Bold | Tall red header and a pale yellow page. |
 | Minimal | White page with a red stripe. |
 
@@ -192,7 +203,7 @@ npm run seed
 npm run dev
 ```
 
-The print font is [Inter](https://github.com/rsms/inter), bundled under the SIL Open Font License (`static/fonts/OFL.txt`).
+The webfont is [Selawik](https://github.com/microsoft/Selawik), metric-compatible with Segoe UI and bundled under the SIL Open Font License (`static/fonts/OFL.txt`). The page font stack is Selawik, then Segoe UI, then Arial.
 
 ## Free plan limits worth knowing
 

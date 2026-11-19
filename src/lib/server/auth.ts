@@ -39,8 +39,25 @@ export async function ensureSuperAdmin(user: User, userClient: SupabaseClient | 
 	return !error;
 }
 
-export async function recordEvent(cardId: string, eventType: string) {
+export async function requireAdmin(locals: App.Locals) {
+	if (!locals.supabase) return null;
+	const user = await locals.getUser();
+	if (!user) return null;
+	const ok = await ensureSuperAdmin(user, locals.supabase);
+	return ok ? locals.supabase : null;
+}
+
+export async function recordEvent(
+	cardId: string,
+	eventType: string,
+	place?: { country?: string | null; city?: string | null }
+) {
 	const service = serviceClient();
 	if (!service) return;
-	await service.from('card_events').insert({ card_id: cardId, event_type: eventType });
+	await service.from('card_events').insert({
+		card_id: cardId,
+		event_type: eventType,
+		country: place?.country || null,
+		city: place?.city || null
+	});
 }

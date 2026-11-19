@@ -1,9 +1,8 @@
 <script lang="ts">
 	import { buildCardView, companyColors, type CardSource, type CompanySource, type VideoView } from '#lib/card-view';
 	import { displayUrl, slugify, storagePublicUrl } from '#lib/format';
-	import { qrSvg } from '#lib/qr';
 	import { parseVideoUrl, vimeoEmbed, youtubeEmbed, youtubePoster } from '#lib/video';
-	import PublicCard from '#lib/components/PublicCard.svelte';
+	import V8Card from '#lib/components/V8Card.svelte';
 	import PrintButton from '#lib/components/PrintButton.svelte';
 
 	type Company = CompanySource & { id: string; products?: { title: string; description: string | null; is_example: boolean; sort_order: number }[] };
@@ -11,7 +10,16 @@
 		id: string;
 		company_id: string;
 		active: boolean;
+		slug_locked?: boolean;
+		labels?: string[] | null;
+		track_location?: boolean | null;
+		two_way_share?: boolean | null;
 	};
+
+	const PRESETS = [
+		{ id: 'classic', name: 'TGIT Classic', primary: '#FF0000', accent: '#FFCF37', pale: '#FFFFA1' },
+		{ id: 'pale', name: 'TGIT Pale', primary: '#FF0000', accent: '#FFCF37', pale: '#FFFFE5' }
+	];
 
 	let {
 		card = null,
@@ -55,10 +63,17 @@
 	let photoObject = $state<string | null>(null);
 	let videoObject = $state<string | null>(null);
 	let copied = $state(false);
+	let step = $state(0);
+	let qrChoice = $state(card?.qr_template || 'logo');
+	let labelsText = $state((card?.labels || []).join(', '));
+	let trackLocation = $state(card?.track_location !== false);
+	let twoWay = $state(card?.two_way_share !== false);
 
 	const selected = $derived(companies.find((company) => company.id === companyId) ?? companies[0]);
 	const cardUrl = $derived(`${baseUrl.replace(/\/$/, '')}/c/${slug || 'preview'}`);
-	const liveQr = $derived(slug ? qrSvg(cardUrl) : null);
+	const presetId = $derived(
+		PRESETS.find((item) => item.primary === colors.primary && item.accent === colors.accent && item.pale === colors.pale)?.id ?? 'classic'
+	);
 
 	$effect(() => {
 		if (!slugTouched) slug = slugify(name);
@@ -94,7 +109,8 @@
 			color_ink: colors.ink,
 			color_paper: colors.paper,
 			color_muted: colors.muted,
-			video_mode: 'none'
+			video_mode: 'none',
+			qr_template: qrChoice
 		};
 		const view = buildCardView({
 			company: selected,
@@ -143,8 +159,10 @@
 	</div>
 	<div class="head-actions">
 		{#if card}
-			<a class="btn btn-primary" href="/c/{card.slug}/qr.png" download="{card.slug}-qr.png">Download QR</a>
-			<a class="btn btn-outline" href="/c/{card.slug}/qr.svg" download="{card.slug}-qr.svg">QR SVG</a>
+			<a class="btn btn-primary" href="/c/{card.slug}/qr.png?template={qrChoice}">QR PNG</a>
+			<a class="btn btn-outline" href="/c/{card.slug}/qr.svg?template={qrChoice}">QR SVG</a>
+			<a class="btn btn-outline" href="/c/{card.slug}/qr.pdf?template={qrChoice}">QR PDF</a>
+			<form method="POST" action="?/duplicate"><button class="btn btn-outline" type="submit">Duplicate card</button></form>
 			<PrintButton
 				slug={card.slug}
 				name={card.name}
@@ -159,7 +177,7 @@
 				blurb={selected?.about ?? ''}
 				tagline={selected?.tagline ?? ''}
 				services={(selected?.products ?? []).map((item) => item.title)}
-				companyEmail={selected?.email ?? ''}
+				companyEmail=""
 				cardUrl={`${baseUrl.replace(/\/$/, '')}/c/${card.slug}`}
 				primary={selected?.color_primary ?? '#FF0000'}
 				accent={selected?.color_accent ?? '#FFCF37'}
@@ -179,6 +197,12 @@
 <form method="POST" action="?/save" enctype="multipart/form-data">
 	<div class="editor-grid">
 		<div>
+			<div class="seg wizard-tabs">
+				<button type="button" class:is-on={step === 0} onclick={() => (step = 0)}>Build</button>
+				<button type="button" class:is-on={step === 1} onclick={() => (step = 1)}>Customize</button>
+				<button type="button" class:is-on={step === 2} onclick={() => (step = 2)}>Set-up</button>
+			</div>
+			<div class:is-hidden={step !== 0}>
 			<div class="card">
 				<h2 style="margin-bottom:14px">Person details</h2>
 				<div class="field"><label for="f-name">Name</label><input id="f-name" name="name" required bind:value={name} /></div>
@@ -189,11 +213,6 @@
 					<select id="f-co" name="company_id" bind:value={companyId}>
 						{#each companies as company}<option value={company.id}>{company.name}</option>{/each}
 					</select>
-				</div>
-				<div class="field">
-					<label for="f-slug">Public link slug</label>
-					<input id="f-slug" name="slug" required bind:value={slug} oninput={() => (slugTouched = true)} />
-					<p class="hint">{cardUrl}</p>
 				</div>
 				<div class="field"><label for="f-phone">Phone</label><input id="f-phone" name="phone" bind:value={phone} /></div>
 				<div class="field"><label for="f-wa">WhatsApp</label><input id="f-wa" name="whatsapp" bind:value={whatsapp} placeholder="https://wa.me/65…" /></div>
@@ -206,21 +225,42 @@
 				</div>
 				<label class="check"><input type="checkbox" name="active" bind:checked={active} /> Enabled — visible on the public link</label>
 			</div>
-
-			<div class="card" style="margin-top:16px">
-				<h2>Colours</h2>
-				<p class="hint">Card colours override the company palette on the public page only. The print PDF keeps the company colours.</p>
-				<label class="check"><input type="checkbox" name="use_company_colors" bind:checked={useCompanyColors} /> Use company colours</label>
-				{#if !useCompanyColors}
-					<div class="field"><label>Primary</label><div class="color-row"><input type="color" bind:value={colors.primary} /><input name="color_primary" bind:value={colors.primary} /></div></div>
-					<div class="field"><label>Accent</label><div class="color-row"><input type="color" bind:value={colors.accent} /><input name="color_accent" bind:value={colors.accent} /></div></div>
-					<div class="field"><label>Pale</label><div class="color-row"><input type="color" bind:value={colors.pale} /><input name="color_pale" bind:value={colors.pale} /></div></div>
-					<div class="field"><label>Ink</label><div class="color-row"><input type="color" bind:value={colors.ink} /><input name="color_ink" bind:value={colors.ink} /></div></div>
-					<div class="field"><label>Paper</label><div class="color-row"><input type="color" bind:value={colors.paper} /><input name="color_paper" bind:value={colors.paper} /></div></div>
-					<div class="field"><label>Grey</label><div class="color-row"><input type="color" bind:value={colors.muted} /><input name="color_muted" bind:value={colors.muted} /></div></div>
-				{/if}
+			</div>
+			<div class="card" class:is-hidden={step !== 1} style="margin-top:16px">
+				<h2>Palette</h2>
+				<p class="hint">TGIT colours only. Gold and pale yellow are for shapes, not text.</p>
+				<input type="hidden" name="color_primary" value={colors.primary} />
+				<input type="hidden" name="color_accent" value={colors.accent} />
+				<input type="hidden" name="color_pale" value={colors.pale} />
+				<input type="hidden" name="color_ink" value={colors.ink} />
+				<input type="hidden" name="color_paper" value={colors.paper} />
+				<input type="hidden" name="color_muted" value={colors.muted} />
+				<button class="preset" class:is-on={useCompanyColors} type="button" onclick={() => (useCompanyColors = true)}>
+					<span class="swatch" style="background:#FF0000"></span>
+					<span class="swatch" style="background:#FFCF37"></span>
+					<span class="swatch" style="background:#FFFFA1"></span>
+					<span>Company colours</span>
+				</button>
+				{#each PRESETS as preset}
+					<button
+						class="preset"
+						class:is-on={!useCompanyColors && presetId === preset.id}
+						type="button"
+						onclick={() => {
+							useCompanyColors = false;
+							colors = { ...colors, primary: preset.primary, accent: preset.accent, pale: preset.pale, ink: '#000000', paper: '#FFFFFF', muted: '#E6E6E6' };
+						}}
+					>
+						<span class="swatch" style="background:{preset.primary}"></span>
+						<span class="swatch" style="background:{preset.accent}"></span>
+						<span class="swatch" style="background:{preset.pale}"></span>
+						<span>{preset.name}</span>
+					</button>
+				{/each}
+				<input type="checkbox" name="use_company_colors" checked={useCompanyColors} class="is-hidden" />
 			</div>
 
+			<div class:is-hidden={step !== 0}>
 			<div class="card" style="margin-top:16px">
 				<h2>Intro / product video</h2>
 				<p class="hint">Upload a short MP4 (max 8 MB) or paste a YouTube or Vimeo link. If this card has no video, the company video is used.</p>
@@ -250,7 +290,32 @@
 				<div class="field"><label>Poster image</label><input name="header_poster" type="file" accept="image/png,image/jpeg,image/webp" /></div>
 				<label class="check"><input type="checkbox" name="remove_header" /> Use the company header instead</label>
 			</div>
+			</div>
 
+			<div class:is-hidden={step !== 2}>
+			<div class="card" style="margin-top:16px">
+				<h2>Set-up</h2>
+				<div class="field">
+					<label for="f-slug">Short URL</label>
+					<input id="f-slug" name="slug" required bind:value={slug} readonly={Boolean(card?.slug_locked)} oninput={() => (slugTouched = true)} />
+					<p class="hint">{card?.slug_locked ? 'This link is locked after the card is created.' : cardUrl}</p>
+				</div>
+				<div class="field">
+					<label for="f-qr">QR template</label>
+					<select id="f-qr" name="qr_template" bind:value={qrChoice}>
+						<option value="black">Black</option>
+						<option value="red">Dark red</option>
+						<option value="logo">Logo in centre</option>
+					</select>
+				</div>
+				<div class="field">
+					<label for="f-labels">Labels</label>
+					<input id="f-labels" name="labels" bind:value={labelsText} placeholder="sales, partner" />
+					<p class="hint">Separate labels with commas.</p>
+				</div>
+				<label class="check"><input type="checkbox" name="track_location" bind:checked={trackLocation} /> Track IP location</label>
+				<label class="check"><input type="checkbox" name="two_way_share" bind:checked={twoWay} /> Two-way contact sharing</label>
+			</div>
 			{#if card}
 				<div class="card" style="margin-top:16px">
 					<h2>QR code & share</h2>
@@ -270,8 +335,13 @@
 				</div>
 				<button class="btn btn-outline" style="margin-top:16px" type="submit" formaction="?/delete" formnovalidate onclick={(event) => { if (!confirm('Delete this card?')) event.preventDefault(); }}>Delete card</button>
 			{/if}
+			</div>
 
-			<div style="margin-top:16px"><button class="btn btn-primary" type="submit">Save card</button></div>
+			<div class="wizard-nav">
+				{#if step > 0}<button class="btn btn-outline" type="button" onclick={() => (step -= 1)}>Back</button>{/if}
+				{#if step < 2}<button class="btn btn-outline" type="button" onclick={() => (step += 1)}>Next</button>{/if}
+				<button class="btn btn-primary" type="submit">Save & Share</button>
+			</div>
 		</div>
 		<div>
 			<h2 style="margin-bottom:10px;text-align:center">Live preview</h2>
@@ -279,7 +349,7 @@
 				<div class="phone-bar"><i></i></div>
 				<div class="phone-screen">
 					{#if preview}
-						<PublicCard model={preview} interactive={false} qrSvg={liveQr} />
+						<V8Card model={preview} interactive={false} showExchange={false} />
 					{/if}
 				</div>
 			</div>

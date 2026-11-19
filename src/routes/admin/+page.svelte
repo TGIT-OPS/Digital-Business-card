@@ -14,7 +14,7 @@
 
 <div class="page-head">
 	<div>
-		<h1>Dashboard</h1>
+		<h1>Overview</h1>
 		<p class="lede">Your workspace as the sole super admin.</p>
 	</div>
 	{#if data.recent[0]}
@@ -45,6 +45,11 @@
 		<div class="kpi-label">Contacts saved</div>
 		<div class="kpi-value">{data.saves}</div>
 		<div class="kpi-foot">{data.saves ? 'vCard downloads' : 'No live traffic yet'}</div>
+	</div>
+	<div class="card kpi accent">
+		<div class="kpi-label">Leads</div>
+		<div class="kpi-value">{data.leads}</div>
+		<div class="kpi-foot"><a href="/admin/contacts">Contact Manager</a></div>
 	</div>
 </div>
 <div class="section">

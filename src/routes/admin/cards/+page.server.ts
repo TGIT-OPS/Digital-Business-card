@@ -7,7 +7,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const status = url.searchParams.get('status') ?? '';
 	let query = supabase
 		.from('cards')
-		.select('id, name, title, slug, active, company_id, company:companies(id, name)')
+		.select('id, name, title, slug, active, labels, company_id, company:companies(id, name)')
 		.order('updated_at', { ascending: false });
 	if (q) query = query.ilike('name', `%${q}%`);
 	if (company) query = query.eq('company_id', company);
@@ -28,6 +28,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		title: string | null;
 		slug: string;
 		active: boolean;
+		labels: string[] | null;
 		company: { name: string } | { name: string }[] | null;
 	}[];
 	return {

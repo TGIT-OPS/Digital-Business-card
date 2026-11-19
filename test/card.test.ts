@@ -43,29 +43,36 @@ print('ok')
 	assert.equal(parsed.status, 0, parsed.stderr.toString());
 });
 
-test('QR encodes the public card URL', () => {
-	const svg = qrSvg(URL);
+test('QR templates decode to the public card URL', () => {
+	const svg = qrSvg(URL, 'red');
 	assert.match(svg, /^<svg/);
-	const png = qrPng(URL, { scale: 8 });
-	assert.equal(png[0], 137);
+	assert.match(svg, /#B30000/i);
 	fs.mkdirSync('test/tmp', { recursive: true });
-	fs.writeFileSync('test/tmp/qr.png', png);
-	const decoded = spawnSync('python3', ['-c', `
+	const logo = fs.readFileSync('static/brand/tgit-logo.png');
+	for (const template of ['black', 'red', 'logo'] as const) {
+		const png = qrPng(URL, { scale: 12, template, logo: template === 'logo' ? logo : null });
+		assert.equal(png[0], 137);
+		const file = `test/tmp/qr-${template}.png`;
+		fs.writeFileSync(file, png);
+		const decoded = spawnSync('python3', ['-c', `
 from PIL import Image
 from pyzbar.pyzbar import decode
-text = decode(Image.open('test/tmp/qr.png'))[0].data.decode()
+hits = decode(Image.open('${file}'))
+assert hits, 'no code'
+text = hits[0].data.decode()
 assert text == '${URL}', text
 print(text)
 `]);
-	assert.equal(decoded.status, 0, decoded.stderr.toString());
+		assert.equal(decoded.status, 0, `${template}: ${decoded.stderr.toString()}`);
+	}
 });
 
 test('print PDF is two pages of 55 by 90 millimetres', async () => {
 	const fonts = {
-		regular: fs.readFileSync('static/fonts/Inter-Regular.ttf'),
-		bold: fs.readFileSync('static/fonts/Inter-Bold.ttf'),
-		italic: fs.readFileSync('static/fonts/Inter-Italic.ttf'),
-		semibold: fs.readFileSync('static/fonts/Inter-SemiBold.ttf')
+		regular: fs.readFileSync('static/fonts/selawk.ttf'),
+		bold: fs.readFileSync('static/fonts/selawkb.ttf'),
+		italic: fs.readFileSync('static/fonts/selawk.ttf'),
+		semibold: fs.readFileSync('static/fonts/selawksb.ttf')
 	};
 	const icons = {
 		phone: fs.readFileSync('static/print/phone.png'),
@@ -84,9 +91,9 @@ test('print PDF is two pages of 55 by 90 millimetres', async () => {
 		address: '#08-01, 101 Eunos Avenue 3, Singapore 409538',
 		addressLines: ['#08-01, 101 Eunos Avenue 3', 'Singapore 409538'],
 		blurb: 'Trusted provider of enterprise IT solutions since 2016.',
-		tagline: 'Clear ownership. Connected teams.',
+		tagline: 'Transforming IT into reality',
 		services: ['Managed IT and support', 'ERP solutions', 'Infrastructure and cloud', 'Microsoft 365 and Teams', 'CCTV and door access', 'Products and licences'],
-		companyEmail: 'support@tgitsolutions.com',
+		companyEmail: '',
 		cardUrl: URL,
 		poster: fs.readFileSync('static/brand/tgit-hand-poster.jpg'),
 		primary: '#FF0000',

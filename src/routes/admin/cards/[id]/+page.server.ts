@@ -35,5 +35,27 @@ export const actions: Actions = {
 		const { error: deleteError } = await locals.supabase!.from('cards').delete().eq('id', params.id);
 		if (deleteError) return fail(400, { message: deleteError.message });
 		redirect(303, '/admin/cards?deleted=1');
+	},
+	duplicate: async ({ locals, params }) => {
+		const supabase = locals.supabase!;
+		const { data: card } = await supabase.from('cards').select('*').eq('id', params.id).maybeSingle();
+		if (!card) return fail(404, { message: 'Card not found' });
+		const id = crypto.randomUUID();
+		let slug = `${card.slug}-copy`;
+		for (let n = 2; n < 30; n += 1) {
+			const { data: clash } = await supabase.from('cards').select('id').eq('slug', slug).maybeSingle();
+			if (!clash) break;
+			slug = `${card.slug}-copy-${n}`;
+		}
+		const { id: _id, created_at: _created, updated_at: _updated, ...rest } = card;
+		const { error: insertError } = await supabase.from('cards').insert({
+			...rest,
+			id,
+			slug,
+			name: `${card.name} copy`,
+			slug_locked: false
+		});
+		if (insertError) return fail(400, { message: insertError.message });
+		redirect(303, `/admin/cards/${id}`);
 	}
 };

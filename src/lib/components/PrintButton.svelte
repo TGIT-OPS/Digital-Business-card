@@ -68,10 +68,10 @@
 		message = '';
 		try {
 			const [regular, bold, italic, semibold, phoneIcon, mail, globe, pin, logo, logoLight, poster] = await Promise.all([
-				bytes('/fonts/Inter-Regular.ttf'),
-				bytes('/fonts/Inter-Bold.ttf'),
-				bytes('/fonts/Inter-Italic.ttf'),
-				bytes('/fonts/Inter-SemiBold.ttf'),
+				bytes('/fonts/selawk.ttf'),
+				bytes('/fonts/selawkb.ttf'),
+				bytes('/fonts/selawk.ttf'),
+				bytes('/fonts/selawksb.ttf'),
 				bytes('/print/phone.png'),
 				bytes('/print/mail.png'),
 				bytes('/print/globe.png'),

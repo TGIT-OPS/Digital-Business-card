@@ -310,10 +310,6 @@ function drawV2Back(
 		page.drawText(line, { x: (PAGE_W - w) / 2, y: textY(top, 6.4), size: 6.4, font: fonts.regular, color: ink });
 		top += 2.8 * MM;
 	}
-	if (input.companyEmail) {
-		const w = fonts.regular.widthOfTextAtSize(input.companyEmail, 6.4);
-		page.drawText(input.companyEmail, { x: (PAGE_W - w) / 2, y: textY(top, 6.4), size: 6.4, font: fonts.regular, color: ink });
-	}
 	drawStripe(page, red);
 }
 

@@ -144,11 +144,11 @@
 						{:else if model.theme?.kind === 'gif' && !reduce}
 							<img class="poster" src={model.theme.src} alt="" style="display:block" />
 						{/if}
-						<div class="media-fade"></div>
 					</div>
-					<svg class="wave-line" viewBox="0 0 390 386" preserveAspectRatio="none" aria-hidden="true">
-						<path d="M 0,380.5 C 8,380 32.5,379.6 48.8,377.9 C 65,376.3 81,373.6 97.5,370.5 C 114,367.5 130,363.5 146,359.5 C 162.5,355.5 179,350.8 195,346.5 C 211,342.2 227.5,337.5 244,333.5 C 260,329.5 276,325.5 292.5,322.5 C 309,319.4 325,316.8 341,315.1 C 357.5,313.4 382,312.9 390,312.5" fill="none" stroke="#FFCF37" stroke-width="1.5" />
-						<path d="M 0,374.5 C 8,374 32.5,373.6 48.8,371.9 C 65,370.3 81,367.6 97.5,364.5 C 114,361.5 130,357.5 146,353.5 C 162.5,349.5 179,344.8 195,340.5 C 211,336.2 227.5,331.5 244,327.5 C 260,323.5 276,319.5 292.5,316.5 C 309,313.4 325,310.8 341,309.1 C 357.5,307.4 382,306.9 390,306.5" fill="none" stroke="#FF0000" stroke-width="3.75" />
+					<svg class="wave-cap" viewBox="0 0 390 90" preserveAspectRatio="none" aria-hidden="true">
+						<path fill="#fff" d="M0,80.5 C8,80 32.5,79.6 48.8,77.9 C65,76.3 81,73.6 97.5,70.5 C114,67.5 130,63.5 146,59.5 C162.5,55.5 179,50.8 195,46.5 C211,42.2 227.5,37.5 244,33.5 C260,29.5 276,25.5 292.5,22.5 C309,19.4 325,16.8 341,15.1 C357.5,13.4 382,12.9 390,12.5 L390,90 L0,90 Z" />
+						<path d="M0,86.5 C8,86 32.5,85.6 48.8,83.9 C65,82.3 81,79.6 97.5,76.5 C114,73.5 130,69.5 146,65.5 C162.5,61.5 179,56.8 195,52.5 C211,48.2 227.5,43.5 244,39.5 C260,35.5 276,31.5 292.5,28.5 C309,25.4 325,22.8 341,21.1 C357.5,19.4 382,18.9 390,18.5" fill="none" stroke="#FFCF37" stroke-width="1.5" />
+						<path d="M0,80.5 C8,80 32.5,79.6 48.8,77.9 C65,76.3 81,73.6 97.5,70.5 C114,67.5 130,63.5 146,59.5 C162.5,55.5 179,50.8 195,46.5 C211,42.2 227.5,37.5 244,33.5 C260,29.5 276,25.5 292.5,22.5 C309,19.4 325,16.8 341,15.1 C357.5,13.4 382,12.9 390,12.5" fill="none" stroke="#FF0000" stroke-width="3.75" />
 					</svg>
 					{#if model.logoUrl}<div class="logo-corner"><img src={model.logoUrl} alt="" /></div>{/if}
 					<p class="motto">{model.tagline || 'Transforming IT into reality'}</p>
@@ -232,11 +232,11 @@
 								<source src={model.theme.src} type="video/mp4" />
 							</video>
 						{/if}
-						<div class="media-fade back-fade"></div>
 					</div>
-					<svg class="wave-line" viewBox="0 0 390 262" preserveAspectRatio="none" aria-hidden="true">
-						<path d="M 0,259 C 8,258.8 32.5,258.5 48.8,257.5 C 65,256.5 81,255 97.5,253 C 114,251.3 130,249 146,246.7 C 162.5,244.3 179,241.6 195,239 C 211,236.5 227.5,233.7 244,231.4 C 260,229 276,226.7 292.5,224.9 C 309,223 325,221.5 341,220.5 C 357.5,219.6 382,219.3 390,219" fill="none" stroke="#FFCF37" stroke-width="1.5" />
-						<path d="M 0,254 C 8,253.8 32.5,253.5 48.8,252.5 C 65,251.5 81,250 97.5,248 C 114,246.3 130,244 146,241.7 C 162.5,239.3 179,236.6 195,234 C 211,231.5 227.5,228.7 244,226.4 C 260,224 276,221.7 292.5,219.9 C 309,218 325,216.5 341,215.5 C 357.5,214.6 382,214.3 390,214" fill="none" stroke="#FF0000" stroke-width="3.5" />
+					<svg class="wave-cap" viewBox="0 0 390 58" preserveAspectRatio="none" aria-hidden="true">
+						<path fill="#fff" d="M0,46 C8,45.8 32.5,45.5 48.8,44.5 C65,43.5 81,42 97.5,40 C114,38.3 130,36 146,33.7 C162.5,31.3 179,28.6 195,26 C211,23.5 227.5,20.7 244,18.4 C260,16 276,13.7 292.5,11.9 C309,10 325,8.5 341,7.5 C357.5,6.6 382,6.3 390,6 L390,58 L0,58 Z" />
+						<path d="M0,51 C8,50.8 32.5,50.5 48.8,49.5 C65,48.5 81,47 97.5,45 C114,43.3 130,41 146,38.7 C162.5,36.3 179,33.6 195,31 C211,28.5 227.5,25.7 244,23.4 C260,21 276,18.7 292.5,16.9 C309,15 325,13.5 341,12.5 C357.5,11.6 382,11.3 390,11" fill="none" stroke="#FFCF37" stroke-width="1.5" />
+						<path d="M0,46 C8,45.8 32.5,45.5 48.8,44.5 C65,43.5 81,42 97.5,40 C114,38.3 130,36 146,33.7 C162.5,31.3 179,28.6 195,26 C211,23.5 227.5,20.7 244,18.4 C260,16 276,13.7 292.5,11.9 C309,10 325,8.5 341,7.5 C357.5,6.6 382,6.3 390,6" fill="none" stroke="#FF0000" stroke-width="3.5" />
 					</svg>
 					{#if model.logoUrl}<div class="logo-corner"><img src={model.logoUrl} alt="" /></div>{/if}
 					<p class="motto">{model.tagline || 'Transforming IT into reality'}</p>
@@ -303,61 +303,56 @@
 	.fill .flip-scale { position: absolute; top: 0; left: 0; }
 	.flipper { width: 390px; height: 636.3636px; position: relative; transform-style: preserve-3d; transition: transform 1s ease; cursor: pointer; }
 	.flipper.is-back { transform: rotateY(180deg); }
-	.face { position: absolute; inset: 0; backface-visibility: hidden; background: #fff; overflow: hidden; }
+	.face { position: absolute; inset: 0; backface-visibility: hidden; background: #fff; overflow: hidden; display: flex; flex-direction: column; }
 	.face.back { transform: rotateY(180deg); }
 	.v8 { font-family: Selawik, "Segoe UI", Arial, sans-serif; color: #000; }
-	.media { position: absolute; left: 0; top: 0; right: 0; height: 386px; z-index: 2; pointer-events: none; }
-	.back-media { height: 262px; }
-	.media-clip { position: absolute; inset: 0; overflow: hidden; background: #fff; clip-path: path("M0,0 L390,0 L390,306.5 C357.5,307.4 308.75,313.4 292.5,316.5 C260,323.5 211.25,336.2 195,340.5 C162.5,349.5 113.75,361.5 97.5,364.5 C65,370.3 8.12,374.1 0,374.5 Z"); }
-	.back-clip { clip-path: path("M0,0 L390,0 L390,214 C357.5,214.6 308.75,218 292.5,219.9 C260,224 211.25,231.5 195,234 C162.5,239.3 113.75,246.3 97.5,248.1 C65,251.5 8.12,253.8 0,254 Z"); }
-	video, .poster { position: absolute; top: 0; left: 0; width: 390px; height: 292.5px; object-fit: fill; }
-	.back-clip video, .back-clip .poster { top: -69px; }
+	.media { position: relative; flex: 1 1 auto; min-height: 168px; z-index: 2; pointer-events: none; }
+	.media-clip { position: absolute; inset: 0; overflow: hidden; background: #fff; }
+	video, .poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center top; }
 	.poster { display: none; }
-	.media-fade { position: absolute; left: 0; top: 228px; width: 390px; height: 72px; background: linear-gradient(to bottom, rgba(255,255,255,0), #fff); }
-	.back-fade { top: 145px; height: 100px; }
-	.wave-line { position: absolute; left: 0; top: 0; width: 390px; height: 386px; }
-	.back-media .wave-line { height: 262px; }
+	.wave-cap { position: absolute; left: 0; right: 0; bottom: -1px; width: 100%; height: 90px; z-index: 3; }
+	.back-media .wave-cap { height: 58px; }
 	.logo-corner { position: absolute; top: 32px; right: 32px; z-index: 4; }
 	.logo-corner img { height: 40px; width: auto; }
 	.motto { position: absolute; top: 80px; right: 32px; z-index: 4; font-weight: 300; font-size: 12px; color: #ff0000; letter-spacing: 0.06em; opacity: 0.68; }
-	.body { position: absolute; inset: 0; padding: 390px 22px 118px; display: flex; flex-direction: column; z-index: 1; }
-	.back-body { padding: 256px 22px 28px; }
-	.ident { display: flex; align-items: stretch; gap: 12px; margin-bottom: 4px; }
+	.body { position: relative; flex: 0 0 auto; padding: 14px 22px; display: flex; flex-direction: column; gap: 14px; z-index: 1; }
+	.back-body { padding: 14px 22px; }
+	.ident { display: flex; align-items: stretch; gap: 12px; }
 	.ident-bar { width: 3px; background: #ff0000; }
 	h1 { font-weight: 600; font-size: 28px; line-height: 1.15; letter-spacing: -0.02em; }
 	.title { font-size: 17px; line-height: 1.2; margin-top: 6px; }
-	.dept { display: inline-block; margin-top: 8px; font-weight: 600; font-size: 13px; line-height: 1.2; background: #ffffe5; border: 1px solid #e6e6e6; padding: 3px 8px; border-radius: 100px; }
+	.dept { display: inline-block; margin-top: 8px; margin-left: -8px; font-weight: 600; font-size: 13px; line-height: 1.2; background: #ffffe5; border: 1px solid #e6e6e6; padding: 3px 8px; border-radius: 100px; }
 	.co { font-style: italic; font-size: 15px; line-height: 1.2; margin-top: 5px; }
-	.contacts { list-style: none; border-top: 1px solid #e6e6e6; margin-top: auto; padding: 2px 0; }
+	.contacts { list-style: none; border-top: 1px solid #e6e6e6; margin: 0; padding: 0; }
 	.contacts li { border-bottom: 1px solid #e6e6e6; }
 	.contacts li:last-child { border-bottom: none; }
-	.contacts a { display: flex; gap: 10px; align-items: center; padding: 1px 0; text-decoration: none; color: #000; width: 100%; }
+	.contacts a { display: flex; gap: 10px; align-items: center; padding: 7px 0; text-decoration: none; color: #000; width: 100%; }
 	.icon { width: 24px; height: 24px; border-radius: 50%; background: #ffe5e5; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 	.icon svg { width: 13px; height: 13px; }
 	.sub { display: block; font-size: 10.5px; line-height: 1.15; color: rgba(0,0,0,0.6); }
 	.value { font-size: 14.5px; line-height: 1.2; }
-	.socials { display: flex; gap: 8px; margin-top: 8px; }
+	.socials { display: flex; gap: 8px; }
 	.socials a { width: 28px; height: 28px; border-radius: 50%; background: #ffe5e5; color: #ff0000; font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center; text-decoration: none; }
 	.qr-block { text-align: center; }
 	.qr-tile { display: inline-block; border: 1px solid #e6e6e6; border-radius: 6px; padding: 5px; }
 	.qr-tile img { width: 86px; height: 86px; }
 	.qr-label { font-weight: 600; font-size: 12px; margin-top: 5px; }
-	.tagline { font-weight: 600; font-size: 17px; margin-top: 8px; }
-	.rule { width: 40px; height: 3px; background: #ff0000; margin: 6px 0; }
+	.tagline { font-weight: 600; font-size: 17px; }
+	.rule { width: 40px; height: 3px; background: #ff0000; margin: 6px 0 4px; }
 	.services { list-style: none; }
-	.services li { font-size: 15px; padding: 2px 0 2px 18px; position: relative; }
+	.services li { font-size: 15px; line-height: 1.35; padding: 3px 0 3px 18px; position: relative; }
 	.services li::before { content: ""; position: absolute; left: 0; top: 0.55em; width: 8px; height: 8px; background: #ff0000; }
-	.addr { margin-top: auto; border-top: 1px solid #e6e6e6; padding-top: 8px; display: flex; gap: 10px; align-items: center; text-decoration: none; color: #000; }
+	.addr { border-top: 1px solid #e6e6e6; padding-top: 12px; display: flex; gap: 10px; align-items: center; text-decoration: none; color: #000; }
 	.addr strong { display: block; font-size: 15px; }
 	.addr-line { font-size: 13px; }
 	.stripe { height: 6px; display: flex; }
-	.face.back .stripe { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; }
+	.face.back .stripe { position: relative; flex: 0 0 auto; }
 	.stripe i { display: block; height: 100%; }
 	.r { width: 44%; background: #ff0000; }
 	.g { width: 28%; background: #ffcf37; }
 	.y { width: 28%; background: #ffffa1; }
-	.front-dock { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; background: #fff; }
-	.front-actions { display: flex; gap: 8px; padding: 8px 12px 6px; }
+	.front-dock { position: relative; flex: 0 0 auto; z-index: 4; background: #fff; }
+	.front-actions { display: flex; gap: 8px; padding: 0 22px 10px; }
 	.mini {
 		flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
 		height: 34px; border: 1.5px solid #000; background: #fff; color: #000;

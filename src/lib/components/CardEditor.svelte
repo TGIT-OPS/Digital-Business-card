@@ -347,9 +347,9 @@
 			<h2 style="margin-bottom:10px;text-align:center">Live preview</h2>
 			<div class="phone">
 				<div class="phone-bar"><i></i></div>
-				<div class="phone-screen">
+				<div class="phone-screen fit">
 					{#if preview}
-						<V8Card model={preview} interactive={false} showExchange={false} />
+						<V8Card model={preview} fill={true} interactive={false} showExchange={true} />
 					{/if}
 				</div>
 			</div>

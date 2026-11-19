@@ -14,5 +14,15 @@
 
 <div class="public-page">
 	{#if data.draft}<p class="draft-banner">This card is not public yet.</p>{/if}
-	<V8Card model={data.view} interactive={true} trackViews={data.trackViews} showExchange={data.showExchange} />
+	<div class="public-fit">
+		<V8Card model={data.view} fill={true} interactive={true} trackViews={data.trackViews} showExchange={data.showExchange} />
+	</div>
 </div>
+
+<style>
+	:global(html:has(.public-page)),
+	:global(body:has(.public-page)) {
+		height: 100%;
+		overflow: hidden;
+	}
+</style>

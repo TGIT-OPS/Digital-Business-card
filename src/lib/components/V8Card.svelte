@@ -6,23 +6,35 @@
 		model,
 		interactive = true,
 		trackViews = false,
-		showExchange = true
+		showExchange = true,
+		fill = false
 	}: {
 		model: CardView;
 		interactive?: boolean;
 		trackViews?: boolean;
 		showExchange?: boolean;
+		fill?: boolean;
 	} = $props();
 
 	let flipped = $state(false);
 	let reduce = $state(false);
 	let leadOpen = $state(false);
 	let leadNote = $state('');
-	let stageWidth = $state(390);
+	let holding = $state(false);
+	let stageW = $state(390);
+	let stageH = $state(844);
 	let stage: HTMLDivElement | undefined = $state();
-	let stop = false;
+	let generation = 0;
 
-	const scale = $derived(Math.min(1, stageWidth / 390));
+	const scale = $derived.by(() => {
+		const width = Math.max(stageW, 1);
+		const height = Math.max(stageH, 1);
+		if (!fill) return Math.min(1, width / 390);
+		const byWidth = width / 390;
+		if (height / byWidth >= 636) return byWidth;
+		return Math.min(byWidth, height / 636);
+	});
+	const innerH = $derived(fill ? Math.max(636, stageH / scale) : 636);
 	const qrSrc = $derived(
 		model.slug ? `/c/${model.slug}/qr.png?template=${model.qrTemplate || 'logo'}` : null
 	);
@@ -43,37 +55,60 @@
 		if (trackViews) track('view');
 		const box = stage;
 		const measure = () => {
-			if (box) stageWidth = box.clientWidth;
+			if (!box) return;
+			stageW = box.clientWidth;
+			stageH = box.clientHeight || box.clientWidth * (90 / 55);
 		};
 		measure();
 		const observer = new ResizeObserver(measure);
 		if (box) observer.observe(box);
 		let alive = true;
+		const shown = async (ms: number, token: number) => {
+			let left = ms;
+			while (left > 0) {
+				if (!alive || generation !== token) return false;
+				if (holding || leadOpen) {
+					await sleep(100);
+					continue;
+				}
+				await sleep(100);
+				left -= 100;
+			}
+			return alive && generation === token;
+		};
 		if (interactive && !reduce) {
 			void (async () => {
-				while (alive && !stop) {
-					flipped = false;
-					await sleep(6000);
-					if (!alive || stop) break;
-					flipped = true;
-					await sleep(13000);
-					if (!alive || stop) break;
-					flipped = false;
-					await sleep(1000);
+				while (alive) {
+					const token = generation;
+					const hold = flipped ? 12000 : 6000;
+					if (!(await shown(hold, token))) continue;
+					if (!alive || generation !== token) continue;
+					flipped = !flipped;
+					await shown(1000, generation);
 				}
 			})();
 		}
+		const release = () => (holding = false);
+		window.addEventListener('pointerup', release);
+		window.addEventListener('pointercancel', release);
 		return () => {
 			alive = false;
 			observer.disconnect();
+			window.removeEventListener('pointerup', release);
+			window.removeEventListener('pointercancel', release);
 		};
 	});
 
-	function tapFlip(event: MouseEvent) {
-		const hit = (event.target as HTMLElement).closest('a[href], button');
-		if (hit) return;
-		stop = true;
+	function manualFlip(event?: MouseEvent) {
+		event?.stopPropagation();
+		generation += 1;
 		flipped = !flipped;
+	}
+
+	function tapFlip(event: MouseEvent) {
+		const hit = (event.target as HTMLElement).closest('a[href], button, .front-dock');
+		if (hit) return;
+		manualFlip();
 	}
 
 	async function sendLead(event: SubmitEvent) {
@@ -85,10 +120,18 @@
 	}
 </script>
 
-<div class="flip-stage" bind:this={stage} style="height:{636.3636 * scale}px">
-	<div class="flip-scale" style="transform:scale({scale})">
+<div
+	class="flip-stage"
+	class:fill
+	bind:this={stage}
+	style={fill ? '' : `height:${636.3636 * scale}px`}
+	onpointerdown={() => (holding = true)}
+	onpointerup={() => (holding = false)}
+	onpointercancel={() => (holding = false)}
+>
+	<div class="flip-scale" style="transform:scale({scale}); height:{innerH}px">
 		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-		<div class="flipper" class:is-back={flipped} onclick={tapFlip}>
+		<div class="flipper" class:is-back={flipped} style="height:{innerH}px" onclick={tapFlip}>
 			<article class="v8 face front">
 				<div class="media">
 					<div class="media-clip">
@@ -154,7 +197,29 @@
 						</div>
 					{/if}
 				</div>
-				<div class="stripe"><i class="r"></i><i class="g"></i><i class="y"></i></div>
+				<div class="front-dock">
+					<div class="stripe"><i class="r"></i><i class="g"></i><i class="y"></i></div>
+					<div class="front-actions">
+						{#if interactive && model.slug}
+							<a class="mini" href="/c/{model.slug}/contact.vcf">
+								<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3v10.2l3.2-3.2 1.4 1.4L12 16.9 7.4 11.4l1.4-1.4 3.2 3.2V3h2zm-7 16h14v2H5v-2z"/></svg>
+								Save
+							</a>
+						{:else}
+							<span class="mini">
+								<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3v10.2l3.2-3.2 1.4 1.4L12 16.9 7.4 11.4l1.4-1.4 3.2 3.2V3h2zm-7 16h14v2H5v-2z"/></svg>
+								Save
+							</span>
+						{/if}
+						<button class="mini" type="button" onclick={manualFlip} aria-label="Flip card">
+							<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 6V3L8 7l4 4V8a4 4 0 014 4 4 4 0 01-4 4v2a6 6 0 000-12zm-2 8l-4-4 4-4v2a6 6 0 010 12v-2a4 4 0 000-8v2z"/></svg>
+							Flip
+						</button>
+					</div>
+					{#if showExchange}
+						<button class="exchange" type="button" onclick={() => { if (interactive) leadOpen = true; }}>Exchange Contacts</button>
+					{/if}
+				</div>
 			</article>
 
 			<article class="v8 face back">
@@ -200,22 +265,14 @@
 						</a>
 					{/if}
 				</div>
+				<button class="flip-back" type="button" onclick={manualFlip} aria-label="Show the front">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 6V3L8 7l4 4V8a4 4 0 014 4 4 4 0 01-4 4v2a6 6 0 000-12zm-2 8l-4-4 4-4v2a6 6 0 010 12v-2a4 4 0 000-8v2z"/></svg>
+				</button>
 				<div class="stripe"><i class="r"></i><i class="g"></i><i class="y"></i></div>
 			</article>
 		</div>
 	</div>
 </div>
-
-{#if interactive}
-	<div class="under-card">
-		{#if model.slug}<a class="btn btn-outline" href="/c/{model.slug}/contact.vcf">Save Contact</a>{/if}
-		<button class="btn btn-outline" type="button" onclick={() => (flipped = !flipped)}>Flip card</button>
-	</div>
-{/if}
-
-{#if interactive && showExchange}
-	<button class="exchange" type="button" onclick={() => (leadOpen = true)}>Exchange Contacts</button>
-{/if}
 
 {#if leadOpen}
 	<div class="modal-back" role="presentation" onclick={(event) => { if (event.target === event.currentTarget) leadOpen = false; }}>
@@ -241,7 +298,9 @@
 
 <style>
 	.flip-stage { width: min(390px, 100%); margin: 0 auto; position: relative; }
+	.flip-stage.fill { position: absolute; top: 0; bottom: 0; left: 50%; width: min(390px, 100%); height: auto; transform: translateX(-50%); }
 	.flip-scale { width: 390px; height: 636.3636px; transform-origin: top left; }
+	.fill .flip-scale { position: absolute; top: 0; left: 0; }
 	.flipper { width: 390px; height: 636.3636px; position: relative; transform-style: preserve-3d; transition: transform 1s ease; cursor: pointer; }
 	.flipper.is-back { transform: rotateY(180deg); }
 	.face { position: absolute; inset: 0; backface-visibility: hidden; background: #fff; overflow: hidden; }
@@ -261,8 +320,8 @@
 	.logo-corner { position: absolute; top: 32px; right: 32px; z-index: 4; }
 	.logo-corner img { height: 40px; width: auto; }
 	.motto { position: absolute; top: 80px; right: 32px; z-index: 4; font-weight: 300; font-size: 12px; color: #ff0000; letter-spacing: 0.06em; opacity: 0.68; }
-	.body { position: absolute; inset: 0; padding: 390px 22px 26px; display: flex; flex-direction: column; z-index: 1; }
-	.back-body { padding: 256px 22px 22px; }
+	.body { position: absolute; inset: 0; padding: 390px 22px 118px; display: flex; flex-direction: column; z-index: 1; }
+	.back-body { padding: 256px 22px 28px; }
 	.ident { display: flex; align-items: stretch; gap: 12px; margin-bottom: 4px; }
 	.ident-bar { width: 3px; background: #ff0000; }
 	h1 { font-weight: 600; font-size: 28px; line-height: 1.15; letter-spacing: -0.02em; }
@@ -291,13 +350,30 @@
 	.addr { margin-top: auto; border-top: 1px solid #e6e6e6; padding-top: 8px; display: flex; gap: 10px; align-items: center; text-decoration: none; color: #000; }
 	.addr strong { display: block; font-size: 15px; }
 	.addr-line { font-size: 13px; }
-	.stripe { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; display: flex; z-index: 3; }
+	.stripe { height: 6px; display: flex; }
+	.face.back .stripe { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; }
 	.stripe i { display: block; height: 100%; }
 	.r { width: 44%; background: #ff0000; }
 	.g { width: 28%; background: #ffcf37; }
 	.y { width: 28%; background: #ffffa1; }
-	.under-card { max-width: 390px; margin: 12px auto; display: flex; gap: 8px; justify-content: center; }
-	.exchange { position: sticky; bottom: 0; display: block; width: min(390px, 100%); margin: 12px auto 0; background: #ff0000; color: #000; border: 0; font: 700 16px/1.2 Selawik, "Segoe UI", Arial, sans-serif; padding: 14px; cursor: pointer; z-index: 5; }
+	.front-dock { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; background: #fff; }
+	.front-actions { display: flex; gap: 8px; padding: 8px 12px 6px; }
+	.mini {
+		flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+		height: 34px; border: 1.5px solid #000; background: #fff; color: #000;
+		font: 700 13px/1 Selawik, "Segoe UI", Arial, sans-serif; text-decoration: none; cursor: pointer;
+	}
+	.mini svg { width: 16px; height: 16px; }
+	.exchange {
+		display: block; width: 100%; border: 0; background: #ff0000; color: #fff;
+		font: 700 16px/1 Selawik, "Segoe UI", Arial, sans-serif; padding: 13px 10px; cursor: pointer;
+	}
+	.flip-back {
+		position: absolute; top: 16px; left: 16px; z-index: 5; width: 36px; height: 36px;
+		border: 0; border-radius: 50%; background: #fff; color: #000; cursor: pointer;
+		display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 1px #e6e6e6;
+	}
+	.flip-back svg { width: 18px; height: 18px; }
 	.hp { position: absolute; left: -9999px; }
 	@media (prefers-reduced-motion: reduce) {
 		.flipper { transition: none; }

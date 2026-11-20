@@ -26,15 +26,62 @@
 	let stage: HTMLDivElement | undefined = $state();
 	let generation = 0;
 
+	let frontEl: HTMLElement | undefined = $state();
+	let backEl: HTMLElement | undefined = $state();
+	/** Natural height of the 390px-wide design: the taller of the two faces with no stretched spacing. */
+	let designH = $state(636);
+	/** Natural heights of each face, and of each face's body, at 390px with no zoom. */
+	let faceNat = $state({ front: 0, back: 0, frontBody: 0, backBody: 0 });
+
+	// Fill mode keeps the 390px design and scales the whole card to fit the window.
+	// On a tall, narrow phone the width limits the scale and the spare height goes into the body spacing.
 	const scale = $derived.by(() => {
 		const width = Math.max(stageW, 1);
 		const height = Math.max(stageH, 1);
 		if (!fill) return Math.min(1, width / 390);
-		const byWidth = width / 390;
-		if (height / byWidth >= 636) return byWidth;
-		return Math.min(byWidth, height / 636);
+		return Math.min(width / 390, height / designH);
 	});
-	const innerH = $derived(fill ? Math.max(636, stageH / scale) : 636);
+	const innerH = $derived(fill ? Math.max(designH, stageH / scale) : 636);
+	const offsetX = $derived(fill ? Math.max(0, (stageW - 390 * scale) / 2) : 0);
+	// When a tall phone leaves spare height, the body grows (front up to 1.12x so a full name stays on one line,
+	// back up to 1.3x) to use it instead of leaving gaps. Whatever is left is spread evenly between the blocks.
+	function bodyZoom(faceH: number, bodyH: number, max: number) {
+		if (!fill || !faceH || !bodyH) return 1;
+		return Math.max(1, Math.min(max, 1 + (innerH - faceH) / bodyH));
+	}
+	const zoomFront = $derived(bodyZoom(faceNat.front, faceNat.frontBody, 1.12));
+	const zoomBack = $derived(bodyZoom(faceNat.back, faceNat.backBody, 1.3));
+
+	/** Natural (unzoomed, unscaled) height of a face and of its body, in design px. */
+	function naturalHeight(face: HTMLElement | undefined, zoom: number) {
+		if (!face) return { total: 0, body: 0 };
+		// Actual on-screen scale of the card (the transform may lag the scale value by a frame).
+		const k = Math.max((face.closest('.flip-scale') ?? face).getBoundingClientRect().width / 390, 0.0001);
+		let total = 0;
+		let body = 0;
+		for (const child of Array.from(face.children) as HTMLElement[]) {
+			const cs = getComputedStyle(child);
+			if (cs.position === 'absolute' || cs.position === 'fixed') continue;
+			if (child.classList.contains('body')) {
+				const items = (Array.from(child.children) as HTMLElement[]).filter((el) => getComputedStyle(el).position !== 'absolute');
+				let h = (parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) + (parseFloat(cs.rowGap) || 0) * Math.max(0, items.length - 1));
+				for (const el of items) {
+					const ecs = getComputedStyle(el);
+					// The contact list can stretch to fill spare height; count only its rows' content.
+					const content = el.classList.contains('contacts')
+						? Array.from(el.children).reduce((sum, li) => sum + ((li.firstElementChild as HTMLElement | null)?.getBoundingClientRect().height ?? 0), 0) / (k * zoom) + el.children.length
+						: el.getBoundingClientRect().height / (k * zoom);
+					h += content + parseFloat(ecs.marginTop) + parseFloat(ecs.marginBottom);
+				}
+				body = h;
+				total += h;
+			} else {
+				total += child.getBoundingClientRect().height / k;
+			}
+		}
+		return { total, body };
+	}
+
 	const qrSrc = $derived(
 		model.slug ? `/c/${model.slug}/qr.png?template=${model.qrTemplate || 'logo'}` : null
 	);
@@ -58,10 +105,21 @@
 			if (!box) return;
 			stageW = box.clientWidth;
 			stageH = box.clientHeight || box.clientWidth * (90 / 55);
+			const f = naturalHeight(frontEl, zoomFront);
+			const b = naturalHeight(backEl, zoomBack);
+			const natural = Math.ceil(Math.max(f.total, b.total));
+			if (natural > 0 && Math.abs(natural - designH) > 0.5) designH = natural;
+			const next = { front: f.total, back: b.total, frontBody: f.body, backBody: b.body };
+			if (Object.keys(next).some((key) => Math.abs(next[key as keyof typeof next] - faceNat[key as keyof typeof next]) > 0.5)) faceNat = next;
 		};
 		measure();
 		const observer = new ResizeObserver(measure);
 		if (box) observer.observe(box);
+		for (const face of [frontEl, backEl]) {
+			if (!face) continue;
+			for (const el of Array.from(face.querySelectorAll('.body > *'))) observer.observe(el);
+		}
+		document.fonts?.ready.then(measure).catch(() => {});
 		let alive = true;
 		const shown = async (ms: number, token: number) => {
 			let left = ms;
@@ -129,10 +187,10 @@
 	onpointerup={() => (holding = false)}
 	onpointercancel={() => (holding = false)}
 >
-	<div class="flip-scale" style="transform:scale({scale}); height:{innerH}px">
+	<div class="flip-scale" style="transform:scale({scale}); height:{innerH}px; left:{offsetX}px">
 		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 		<div class="flipper" class:is-back={flipped} style="height:{innerH}px" onclick={tapFlip}>
-			<article class="v8 face front">
+			<article class="v8 face front" bind:this={frontEl}>
 				<div class="media">
 					<div class="media-clip">
 						{#if model.theme?.poster}<img class="poster" src={model.theme.poster} alt="" />{/if}
@@ -145,7 +203,6 @@
 							<img class="poster" src={model.theme.src} alt="" style="display:block" />
 						{/if}
 					</div>
-					<div class="media-fade" aria-hidden="true"></div>
 					<svg class="wave-cap" viewBox="0 0 390 90" preserveAspectRatio="none" aria-hidden="true">
 						<path fill="#fff" d="M0,80.5 C8,80 32.5,79.6 48.8,77.9 C65,76.3 81,73.6 97.5,70.5 C114,67.5 130,63.5 146,59.5 C162.5,55.5 179,50.8 195,46.5 C211,42.2 227.5,37.5 244,33.5 C260,29.5 276,25.5 292.5,22.5 C309,19.4 325,16.8 341,15.1 C357.5,13.4 382,12.9 390,12.5 L390,90 L0,90 Z" />
 						<path d="M0,86.5 C8,86 32.5,85.6 48.8,83.9 C65,82.3 81,79.6 97.5,76.5 C114,73.5 130,69.5 146,65.5 C162.5,61.5 179,56.8 195,52.5 C211,48.2 227.5,43.5 244,39.5 C260,35.5 276,31.5 292.5,28.5 C309,25.4 325,22.8 341,21.1 C357.5,19.4 382,18.9 390,18.5" fill="none" stroke="#FFCF37" stroke-width="1.5" />
@@ -154,7 +211,7 @@
 					{#if model.logoUrl}<div class="logo-corner"><img src={model.logoUrl} alt="" /></div>{/if}
 					<p class="motto">{model.tagline || 'Transforming IT into reality'}</p>
 				</div>
-				<div class="body">
+				<div class="body" class:fill-rows={fill} style="zoom:{zoomFront}">
 					<div class="ident">
 						<div class="ident-bar"></div>
 						<div>
@@ -223,7 +280,7 @@
 				</div>
 			</article>
 
-			<article class="v8 face back">
+			<article class="v8 face back" bind:this={backEl}>
 				<div class="media back-media">
 					<div class="media-clip back-clip">
 						{#if model.theme?.poster}<img class="poster" src={model.theme.poster} alt="" />{/if}
@@ -234,7 +291,6 @@
 							</video>
 						{/if}
 					</div>
-					<div class="media-fade" aria-hidden="true"></div>
 					<svg class="wave-cap" viewBox="0 0 390 58" preserveAspectRatio="none" aria-hidden="true">
 						<path fill="#fff" d="M0,46 C8,45.8 32.5,45.5 48.8,44.5 C65,43.5 81,42 97.5,40 C114,38.3 130,36 146,33.7 C162.5,31.3 179,28.6 195,26 C211,23.5 227.5,20.7 244,18.4 C260,16 276,13.7 292.5,11.9 C309,10 325,8.5 341,7.5 C357.5,6.6 382,6.3 390,6 L390,58 L0,58 Z" />
 						<path d="M0,51 C8,50.8 32.5,50.5 48.8,49.5 C65,48.5 81,47 97.5,45 C114,43.3 130,41 146,38.7 C162.5,36.3 179,33.6 195,31 C211,28.5 227.5,25.7 244,23.4 C260,21 276,18.7 292.5,16.9 C309,15 325,13.5 341,12.5 C357.5,11.6 382,11.3 390,11" fill="none" stroke="#FFCF37" stroke-width="1.5" />
@@ -243,20 +299,22 @@
 					{#if model.logoUrl}<div class="logo-corner"><img src={model.logoUrl} alt="" /></div>{/if}
 					<p class="motto">{model.tagline || 'Transforming IT into reality'}</p>
 				</div>
-				<div class="body back-body">
+				<div class="body back-body" style="zoom:{zoomBack}">
 					<div class="qr-block">
 						<div class="qr-tile">
 							{#if qrSrc}<img src={qrSrc} alt="QR code for this card" />{/if}
 						</div>
 						<div class="qr-label">Scan to view our company profile</div>
 					</div>
-					<div class="tagline">Our Services</div>
-					<div class="rule"></div>
-					<ul class="services">
-						{#each model.products as item}
-							{#if !item.is_example}<li>{item.title}</li>{/if}
-						{/each}
-					</ul>
+					<div class="svc">
+						<div class="tagline">Our Services</div>
+						<div class="rule"></div>
+						<ul class="services">
+							{#each model.products as item}
+								{#if !item.is_example}<li>{item.title}</li>{/if}
+							{/each}
+						</ul>
+					</div>
 					{#if model.address}
 						<a class="addr" href={interactive ? model.mapsUrl : undefined} target="_blank" rel="noopener">
 							<span class="icon"><svg viewBox="0 0 24 24"><path fill="#FF0000" d="M12 2a7 7 0 00-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 00-7-7zm0 9.5A2.5 2.5 0 1112 6.5 2.5 2.5 0 0112 11.5z"/></svg></span>
@@ -300,7 +358,7 @@
 
 <style>
 	.flip-stage { width: min(390px, 100%); margin: 0 auto; position: relative; }
-	.flip-stage.fill { position: absolute; top: 0; bottom: 0; left: 50%; width: min(390px, 100%); height: auto; transform: translateX(-50%); }
+	.flip-stage.fill { position: absolute; inset: 0; width: auto; height: auto; }
 	.flip-scale { width: 390px; height: 636.3636px; transform-origin: top left; }
 	.fill .flip-scale { position: absolute; top: 0; left: 0; }
 	.flipper { width: 390px; height: 636.3636px; position: relative; transform-style: preserve-3d; transition: transform 1s ease; cursor: pointer; }
@@ -308,36 +366,22 @@
 	.face { position: absolute; inset: 0; backface-visibility: hidden; background: #fff; overflow: hidden; display: flex; flex-direction: column; }
 	.face.back { transform: rotateY(180deg); }
 	.v8 { font-family: Selawik, "Segoe UI", Arial, sans-serif; color: #000; }
-	.media { position: relative; flex: 1 1 auto; min-height: 168px; z-index: 2; pointer-events: none; }
-	/* Header framing matches the v8 sample: the 4:3 loop is shown full width and never cropped at the sides.
-	   Its bottom edge sits a fixed distance above the wave (front 93.5px, back 38.4px), as in the sample.
-	   When the header is taller than the sample, the space above is filled with the frame's own top colours. */
-	.media-clip {
-		position: absolute; inset: 0; overflow: hidden;
-		background: linear-gradient(to right, #d7dbe6 0%, #e1e3e9 20%, #eeeeef 38%, #f5f5f7 55%, #f9f9fb 75%, #fafbfd 100%);
-	}
-	video, .poster {
-		position: absolute; left: 0; right: 0; top: auto; bottom: 93.5px;
-		width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; object-position: center top;
-	}
-	.back-clip video, .back-clip .poster { bottom: 38.4px; }
-	.media-fade {
-		position: absolute; left: 0; right: 0; bottom: 86px; height: 72px; z-index: 2; pointer-events: none;
-		background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.28) 50%, rgba(255,255,255,0.62) 72%, rgba(255,255,255,0.9) 88%, #fff 100%);
-	}
-	.back-media .media-fade {
-		bottom: 17px; height: 100px;
-		background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.06) 18%, rgba(255,255,255,0.32) 42%, rgba(255,255,255,0.7) 62%, rgba(255,255,255,0.94) 78%, #fff 88%, #fff 100%);
-	}
-	.media-clip::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 86px; background: #fff; }
-	.back-clip::after { height: 17px; }
+	.media { position: relative; flex: 0 0 auto; height: 304.5px; z-index: 2; pointer-events: none; }
+	.media.back-media { height: 228px; }
+	/* Header = the 4:3 loop at full card width (never cropped at the sides) with the wave drawn over its bottom edge,
+	   placed so the wave passes just under the palm and fingertips. Front shows the whole frame; the back drops the
+	   top 68.86px of circuits, as in the v8 back. The background matches the frame's bottom-left in case a sub-pixel
+	   sliver shows above the wave at the far left. */
+	.media-clip { position: absolute; inset: 0; overflow: hidden; background: #cdd1dd; }
+	video, .poster { position: absolute; left: 0; top: 0; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; }
+	.back-clip video, .back-clip .poster { top: -68.86px; }
 	.poster { display: none; }
 	.wave-cap { position: absolute; left: 0; right: 0; bottom: -1px; width: 100%; height: 90px; z-index: 3; }
 	.back-media .wave-cap { height: 58px; }
 	.logo-corner { position: absolute; top: 32px; right: 32px; z-index: 4; }
 	.logo-corner img { height: 40px; width: auto; }
 	.motto { position: absolute; top: 80px; right: 32px; z-index: 4; font-weight: 300; font-size: 12px; color: #ff0000; letter-spacing: 0.06em; opacity: 0.68; }
-	.body { position: relative; flex: 0 0 auto; padding: 14px 22px; display: flex; flex-direction: column; gap: 14px; z-index: 1; }
+	.body { position: relative; flex: 1 1 auto; padding: 14px 22px; display: flex; flex-direction: column; justify-content: space-evenly; gap: 14px; z-index: 1; }
 	.back-body { padding: 14px 22px; }
 	.ident { display: flex; align-items: stretch; gap: 12px; }
 	.ident-bar { width: 3px; background: #ff0000; }
@@ -347,6 +391,9 @@
 	.co { font-style: italic; font-size: 15px; line-height: 1.2; margin-top: 5px; }
 	.contacts { list-style: none; border-top: 1px solid #e6e6e6; margin: 0; padding: 0; }
 	.contacts li { border-bottom: 1px solid #e6e6e6; }
+	/* Spare height on tall phones goes first into taller contact rows (up to 72px each), then evenly between blocks. */
+	.fill-rows .contacts { flex: 1 1 auto; display: flex; flex-direction: column; max-height: 216px; }
+	.fill-rows .contacts li { flex: 1 1 auto; display: flex; align-items: center; }
 	.contacts li:last-child { border-bottom: none; }
 	.contacts a { display: flex; gap: 10px; align-items: center; padding: 7px 0; text-decoration: none; color: #000; width: 100%; }
 	.icon { width: 24px; height: 24px; border-radius: 50%; background: #ffe5e5; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }

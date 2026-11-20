@@ -1,7 +1,7 @@
 <div class="page-head">
 	<div>
 		<h1>Help</h1>
-		<p class="lede">How to run TGIT Cards day to day.</p>
+		<p class="lede">How to run your digital business cards day to day.</p>
 	</div>
 </div>
 <div class="card">

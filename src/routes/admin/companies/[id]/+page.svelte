@@ -201,7 +201,7 @@
 			<div class="field"><label>Paper</label><div class="color-row"><input type="color" bind:value={colors.paper} /><input name="color_paper" bind:value={colors.paper} /></div></div>
 			<div class="field"><label>Grey</label><div class="color-row"><input type="color" bind:value={colors.muted} /><input name="color_muted" bind:value={colors.muted} /></div></div>
 			<h2 style="margin:20px 0 8px">Card layout template</h2>
-			<p class="hint">Classic Vertical is the layout designed for TGIT.</p>
+			<p class="hint">Classic Vertical is the default layout.</p>
 			<input type="hidden" name="layout_template" value={template} />
 			<div class="templates">
 				<button type="button" class="tpl" class:is-on={template === 'classic'} onclick={() => (template = 'classic')}>

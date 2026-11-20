@@ -5,7 +5,7 @@
 <div class="page-head">
 	<div>
 		<h1>Templates</h1>
-		<p class="lede">New cards start from the company default. TGIT Classic v8 is the approved layout.</p>
+		<p class="lede">New cards start from each company’s default template.</p>
 	</div>
 </div>
 {#if form?.message}<p class="banner">{form.message}</p>{/if}

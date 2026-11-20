@@ -1,75 +1,97 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import Icon from '#lib/components/Icon.svelte';
 	let { data } = $props();
-	const cardFoot = $derived(
-		data.cardCount === 1 && data.firstCard
-			? `${data.firstCard.name} · ${companyName(data.firstCard.company)}`
-			: `${data.cardCount} in the workspace`
-	);
-	const companyFoot = $derived(data.companyCount === 1 && data.firstCompany ? data.firstCompany.name : `${data.companyCount} companies`);
-	function companyName(company: { name: string } | { name: string }[] | null) {
-		if (!company) return '';
-		return Array.isArray(company) ? company[0]?.name ?? '' : company.name;
+	let video = $state<HTMLVideoElement | null>(null);
+
+	const LABELS: Record<string, [string, string, string]> = {
+		view: ['Card viewed', 'eye', 'gold'],
+		save: ['Contact saved', 'download', 'pale'],
+		click_call: ['Call tapped', 'phone', 'red'],
+		click_whatsapp: ['WhatsApp tapped', 'phone', 'red'],
+		click_email: ['Email tapped', 'mail', 'red'],
+		click_website: ['Website opened', 'ext', 'ink'],
+		click_directions: ['Directions opened', 'pin', 'ink'],
+		click_share: ['Card shared', 'copy', 'gold'],
+		click_video: ['Video played', 'eye', 'ink'],
+		lead: ['Contact exchanged', 'inbox', 'red']
+	};
+	function label(type: string): [string, string, string] {
+		return LABELS[type] ?? [type.replace(/^click_/, '').replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase()), 'sparkle', 'ink'];
 	}
+	function ago(iso: string) {
+		const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+		if (s < 60) return 'just now';
+		if (s < 3600) return `${Math.floor(s / 60)} min ago`;
+		if (s < 86400) return `${Math.floor(s / 3600)} h ago`;
+		return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+	}
+	onMount(() => {
+		if (video && matchMedia('(prefers-reduced-motion: reduce)').matches) video.pause();
+	});
 </script>
 
-<div class="page-head">
-	<div>
-		<h1>Overview</h1>
-		<p class="lede">Your workspace as the sole super admin.</p>
+<section class="hero">
+	<video bind:this={video} autoplay muted loop playsinline preload="metadata" poster="/brand/tgit-hand-poster.jpg" aria-hidden="true">
+		<source src="/brand/tgit-hand-loop.mp4" type="video/mp4" />
+	</video>
+	<div class="copy">
+		<div class="eyebrow">Welcome back</div>
+		<h1>Your digital business cards, <em>in one place</em></h1>
+		<p>Create, share and track digital business cards for your team. Share with a scan, capture every contact.</p>
+		<div class="ctas">
+			<a class="btn btn-primary" href="/admin/cards/new"><Icon name="plus" size={16} />Create a card</a>
+			{#if data.latest}
+				<a class="btn btn-outline" href="/c/{data.latest.slug}" target="_blank" rel="noopener"><Icon name="ext" size={16} />View {data.latest.name.split(' ')[0]}’s card</a>
+			{/if}
+		</div>
 	</div>
-	{#if data.recent[0]}
-		<a class="btn btn-primary" href="/admin/cards/{data.recent[0].id}">Open {data.recent[0].name}’s card</a>
-	{/if}
-</div>
+	<svg class="wave" viewBox="0 0 1200 46" preserveAspectRatio="none" aria-hidden="true"><path d="M0 22 C200 2 400 42 600 22 S1000 2 1200 22 V46 H0Z" fill="#fff"/><path d="M0 22 C200 2 400 42 600 22 S1000 2 1200 22" fill="none" stroke="#FF0000" stroke-width="3"/><path d="M0 29 C200 9 400 49 600 29 S1000 9 1200 29" fill="none" stroke="#FFCF37" stroke-width="1.5"/></svg>
+</section>
+
 <div class="grid-4">
-	<div class="card kpi accent">
-		<div class="kpi-icon"><svg viewBox="0 0 24 24"><path fill="#000" d="M4 4h16v6H4V4zm0 8h16v8H4v-8zm2 2v4h5v-4H6z"/></svg></div>
-		<div class="kpi-label">Cards</div>
-		<div class="kpi-value">{data.cardCount}</div>
-		<div class="kpi-foot">{cardFoot}</div>
-	</div>
-	<div class="card kpi accent">
-		<div class="kpi-icon"><svg viewBox="0 0 24 24"><path fill="#000" d="M3 21V7h8V3h10v18H3zm2-2h4v-4H5v4zm6 0h4v-4h-4v4zm6 0h4V5h-8v2h4v12z"/></svg></div>
-		<div class="kpi-label">Companies</div>
-		<div class="kpi-value">{data.companyCount}</div>
-		<div class="kpi-foot">{companyFoot}</div>
-	</div>
-	<div class="card kpi accent">
-		<div class="kpi-icon"><svg viewBox="0 0 24 24"><path fill="#000" d="M12 5a7 7 0 017 7h2A9 9 0 003 12h2a7 7 0 017-7zm0 4a3 3 0 013 3h2a5 5 0 00-10 0h2a3 3 0 013-3zm0 8a2 2 0 110-4 2 2 0 010 4z"/></svg></div>
-		<div class="kpi-label">Total views</div>
-		<div class="kpi-value">{data.views}</div>
-		<div class="kpi-foot">{data.views ? 'Across all public cards' : 'No live traffic yet'}</div>
-	</div>
-	<div class="card kpi accent">
-		<div class="kpi-icon"><svg viewBox="0 0 24 24"><path fill="#000" d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zM8 11c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div>
-		<div class="kpi-label">Contacts saved</div>
-		<div class="kpi-value">{data.saves}</div>
-		<div class="kpi-foot">{data.saves ? 'vCard downloads' : 'No live traffic yet'}</div>
-	</div>
-	<div class="card kpi accent">
-		<div class="kpi-label">Leads</div>
-		<div class="kpi-value">{data.leads}</div>
-		<div class="kpi-foot"><a href="/admin/contacts">Contact Manager</a></div>
-	</div>
+	<div class="card kpi"><div class="kpi-icon"><Icon name="card" /></div><div class="kpi-label">Cards</div><div class="kpi-value">{data.cardCount}</div><div class="kpi-foot">{data.readyCount} ready · {data.draftCount} drafts</div></div>
+	<div class="card kpi"><div class="kpi-icon gold"><Icon name="eye" /></div><div class="kpi-label">Card views</div><div class="kpi-value">{data.views}</div><div class="kpi-foot">{data.views ? 'All time' : 'No live traffic yet'}</div></div>
+	<div class="card kpi"><div class="kpi-icon pale"><Icon name="download" /></div><div class="kpi-label">Contact saves</div><div class="kpi-value">{data.saves}</div><div class="kpi-foot">vCard downloads</div></div>
+	<div class="card kpi"><div class="kpi-icon ink"><Icon name="inbox" /></div><div class="kpi-label">Leads</div><div class="kpi-value">{data.leads}</div><div class="kpi-foot"><a href="/admin/contacts">From Exchange Contacts →</a></div></div>
 </div>
-<div class="section">
-	<h2 class="section-title">Recent cards</h2>
-	<div class="card" style="padding:0">
-		<table class="data">
-			<thead><tr><th>Name</th><th>Title</th><th>Company</th><th>Status</th><th></th></tr></thead>
-			<tbody>
-				{#each data.recent as card}
-					<tr>
-						<td>{card.name}</td>
-						<td>{card.title}</td>
-						<td>{card.companyName}</td>
-						<td><span class="badge" class:badge-muted={!card.active}>{card.active ? 'Ready' : 'Draft'}</span></td>
-						<td><a class="btn btn-outline btn-sm" href="/admin/cards/{card.id}">Edit</a></td>
-					</tr>
+
+<div class="grid2">
+	<section class="panel">
+		<div class="panel-h"><h2>Recent activity</h2><a class="more" href="/admin/analytics">View analytics →</a></div>
+		<div class="panel-b">
+			<ul class="act">
+				{#each data.activity as item}
+					{@const [text, icon, tone] = label(item.type)}
+					<li><span class="chip-i {tone}"><Icon name={icon} size={16} /></span><div><div class="t">{text}</div><div class="d">{item.name}{item.slug ? ` · /c/${item.slug}` : ''}</div></div><span class="when">{ago(item.at)}</span></li>
 				{:else}
-					<tr><td colspan="5">No cards yet.</td></tr>
+					<li class="empty-row">No activity yet. Share a card to see views and saves here.</li>
 				{/each}
-			</tbody>
-		</table>
-	</div>
+			</ul>
+		</div>
+	</section>
+	<section class="panel">
+		<div class="panel-h"><h2>Quick actions</h2></div>
+		<div class="panel-b">
+			<div class="qa">
+				<a href="/admin/cards/new"><span class="chip-i red"><Icon name="plus" /></span><b>New card</b><small>Build a card with the guided wizard</small></a>
+				<a href="/admin/contacts"><span class="chip-i gold"><Icon name="upload" /></span><b>Contacts</b><small>Leads and CSV import or export</small></a>
+				<a href="/admin/companies"><span class="chip-i pale"><Icon name="building" /></span><b>Companies</b><small>Logos, colours, services and address</small></a>
+				<a href="/admin/assets"><span class="chip-i ink"><Icon name="image" /></span><b>Asset library</b><small>Logos, videos and images</small></a>
+			</div>
+		</div>
+	</section>
 </div>
+
+{#if data.services.length}
+	<section class="panel section">
+		<div class="panel-h"><h2>Our services</h2><span class="sub">Shown on the back of each card</span><a class="more" href="/admin/services">Manage →</a></div>
+		<div class="panel-b">
+			<div class="svc-grid">
+				{#each data.services as service}
+					<div class="svc"><img src={service.image} alt="" loading="lazy" decoding="async" width="640" height="480" /><div class="lbl">{service.title}</div></div>
+				{/each}
+			</div>
+		</div>
+	</section>
+{/if}

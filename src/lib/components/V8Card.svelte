@@ -145,6 +145,7 @@
 							<img class="poster" src={model.theme.src} alt="" style="display:block" />
 						{/if}
 					</div>
+					<div class="media-fade" aria-hidden="true"></div>
 					<svg class="wave-cap" viewBox="0 0 390 90" preserveAspectRatio="none" aria-hidden="true">
 						<path fill="#fff" d="M0,80.5 C8,80 32.5,79.6 48.8,77.9 C65,76.3 81,73.6 97.5,70.5 C114,67.5 130,63.5 146,59.5 C162.5,55.5 179,50.8 195,46.5 C211,42.2 227.5,37.5 244,33.5 C260,29.5 276,25.5 292.5,22.5 C309,19.4 325,16.8 341,15.1 C357.5,13.4 382,12.9 390,12.5 L390,90 L0,90 Z" />
 						<path d="M0,86.5 C8,86 32.5,85.6 48.8,83.9 C65,82.3 81,79.6 97.5,76.5 C114,73.5 130,69.5 146,65.5 C162.5,61.5 179,56.8 195,52.5 C211,48.2 227.5,43.5 244,39.5 C260,35.5 276,31.5 292.5,28.5 C309,25.4 325,22.8 341,21.1 C357.5,19.4 382,18.9 390,18.5" fill="none" stroke="#FFCF37" stroke-width="1.5" />
@@ -233,6 +234,7 @@
 							</video>
 						{/if}
 					</div>
+					<div class="media-fade" aria-hidden="true"></div>
 					<svg class="wave-cap" viewBox="0 0 390 58" preserveAspectRatio="none" aria-hidden="true">
 						<path fill="#fff" d="M0,46 C8,45.8 32.5,45.5 48.8,44.5 C65,43.5 81,42 97.5,40 C114,38.3 130,36 146,33.7 C162.5,31.3 179,28.6 195,26 C211,23.5 227.5,20.7 244,18.4 C260,16 276,13.7 292.5,11.9 C309,10 325,8.5 341,7.5 C357.5,6.6 382,6.3 390,6 L390,58 L0,58 Z" />
 						<path d="M0,51 C8,50.8 32.5,50.5 48.8,49.5 C65,48.5 81,47 97.5,45 C114,43.3 130,41 146,38.7 C162.5,36.3 179,33.6 195,31 C211,28.5 227.5,25.7 244,23.4 C260,21 276,18.7 292.5,16.9 C309,15 325,13.5 341,12.5 C357.5,11.6 382,11.3 390,11" fill="none" stroke="#FFCF37" stroke-width="1.5" />
@@ -307,8 +309,28 @@
 	.face.back { transform: rotateY(180deg); }
 	.v8 { font-family: Selawik, "Segoe UI", Arial, sans-serif; color: #000; }
 	.media { position: relative; flex: 1 1 auto; min-height: 168px; z-index: 2; pointer-events: none; }
-	.media-clip { position: absolute; inset: 0; overflow: hidden; background: #fff; }
-	video, .poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+	/* Header framing matches the v8 sample: the 4:3 loop is shown full width and never cropped at the sides.
+	   Its bottom edge sits a fixed distance above the wave (front 93.5px, back 38.4px), as in the sample.
+	   When the header is taller than the sample, the space above is filled with the frame's own top colours. */
+	.media-clip {
+		position: absolute; inset: 0; overflow: hidden;
+		background: linear-gradient(to right, #d7dbe6 0%, #e1e3e9 20%, #eeeeef 38%, #f5f5f7 55%, #f9f9fb 75%, #fafbfd 100%);
+	}
+	video, .poster {
+		position: absolute; left: 0; right: 0; top: auto; bottom: 93.5px;
+		width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; object-position: center top;
+	}
+	.back-clip video, .back-clip .poster { bottom: 38.4px; }
+	.media-fade {
+		position: absolute; left: 0; right: 0; bottom: 86px; height: 72px; z-index: 2; pointer-events: none;
+		background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.28) 50%, rgba(255,255,255,0.62) 72%, rgba(255,255,255,0.9) 88%, #fff 100%);
+	}
+	.back-media .media-fade {
+		bottom: 17px; height: 100px;
+		background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.06) 18%, rgba(255,255,255,0.32) 42%, rgba(255,255,255,0.7) 62%, rgba(255,255,255,0.94) 78%, #fff 88%, #fff 100%);
+	}
+	.media-clip::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 86px; background: #fff; }
+	.back-clip::after { height: 17px; }
 	.poster { display: none; }
 	.wave-cap { position: absolute; left: 0; right: 0; bottom: -1px; width: 100%; height: 90px; z-index: 3; }
 	.back-media .wave-cap { height: 58px; }

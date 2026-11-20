@@ -17,7 +17,7 @@
 </script>
 
 <svelte:head>
-	<title>TGIT Nexus · Digital Business Cards</title>
+	<title>TGIT Cards · Digital Business Cards</title>
 	<meta name="robots" content="noindex" />
 </svelte:head>
 
@@ -25,7 +25,7 @@
 	<header class="topbar">
 		<a class="topbar-brand" href="/admin">
 			<img src="/brand/tgit-logo.png" alt="TGIT" />
-			<span class="nexus">NEXUS</span>
+			<span class="brand-word">CARDS</span>
 		</a>
 		<div class="topbar-right">
 			<div class="who">

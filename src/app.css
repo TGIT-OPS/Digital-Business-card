@@ -118,7 +118,7 @@ label { font: 400 14px/1.3 var(--font); }
 }
 .login-brand { text-align: center; margin-bottom: 28px; }
 .login-brand img { height: 40px; width: auto; margin: 0 auto 10px; }
-.login-brand .nexus {
+.login-brand .brand-word {
 	font: 700 20px/1 var(--font); letter-spacing: 0.14em;
 	display: inline-block; padding-bottom: 6px; border-bottom: 3px solid var(--red);
 }
@@ -149,7 +149,7 @@ label { font: 400 14px/1.3 var(--font); }
 }
 .topbar-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
 .topbar-brand img { height: 28px; width: auto; }
-.topbar-brand .nexus {
+.topbar-brand .brand-word {
 	font: 700 16px/1 var(--font); letter-spacing: 0.12em;
 	padding-bottom: 3px; border-bottom: 3px solid var(--red);
 }

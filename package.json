@@ -1,9 +1,9 @@
 {
-  "name": "tgit-nexus",
+  "name": "tgit-cards",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "TGIT Nexus digital business cards",
+  "description": "TGIT digital business cards",
   "engines": {
     "node": ">=22.12"
   },

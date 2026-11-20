@@ -1,4 +1,4 @@
--- TGIT Nexus — companies, cards, analytics.
+-- TGIT Cards — companies, cards, analytics.
 -- Safe to run more than once in the Supabase SQL editor.
 -- Public visitors can read active cards of active companies.
 -- Only the super admin can change data. Analytics events are written by the server.

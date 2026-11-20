@@ -116,7 +116,7 @@ export async function buildCardPdf(input: PrintInput): Promise<Uint8Array> {
 	const doc = await PDFDocument.create();
 	doc.registerFontkit(fontkit);
 	doc.setTitle(`${input.name} · ${input.company}`);
-	doc.setAuthor(input.company || 'TGIT Nexus');
+	doc.setAuthor(input.company || 'TGIT Cards');
 	const regular = await doc.embedFont(input.fonts.regular);
 	const bold = await doc.embedFont(input.fonts.bold);
 	const italic = await doc.embedFont(input.fonts.italic);

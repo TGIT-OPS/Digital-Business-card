@@ -1,4 +1,4 @@
-# TGIT Nexus
+# TGIT Cards
 
 Digital business cards for [TGIT Pte Ltd](https://tgitsolutions.com). One super admin signs in and manages every company and card. There is no public sign-up.
 
@@ -113,7 +113,7 @@ QR codes and copied links use `PUBLIC_BASE_URL`. For a local trial, set that to 
 
 1. In the Cloudflare Pages project, open **Custom domains → Set up a custom domain**.
 2. Enter `cards.tgitsolutions.com`.
-3. Cloudflare shows a CNAME target such as `tgit-nexus.pages.dev`.
+3. Cloudflare shows a CNAME target such as `tgit-cards.pages.dev`.
 4. At the DNS host for `tgitsolutions.com` (Cloudflare DNS, or whoever hosts the domain today), add:
 
 | Type | Name | Target |

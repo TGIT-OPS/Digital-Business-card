@@ -11,3 +11,5 @@ test/tmp
 .DS_Store
 *.log
 .vercel
+.dev.vars
+.dev.vars.*

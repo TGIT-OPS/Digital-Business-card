@@ -8,7 +8,7 @@
 </script>
 
 <svelte:head>
-	<title>Sign in · TGIT Nexus</title>
+	<title>Sign in · TGIT Cards</title>
 	<meta name="robots" content="noindex" />
 </svelte:head>
 
@@ -19,7 +19,7 @@
 	<form class="login-card" method="POST">
 		<div class="login-brand">
 			<img src="/brand/tgit-logo.png" alt="TGIT" />
-			<div class="nexus">NEXUS</div>
+			<div class="brand-word">CARDS</div>
 		</div>
 		<h1>Sign in</h1>
 		<p class="login-sub">Digital Business Cards · Super admin</p>
